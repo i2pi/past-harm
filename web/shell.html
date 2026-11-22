@@ -32,14 +32,38 @@ body.playing.idle #canvas { cursor: none; }
   opacity: 0.7; transition: opacity 0.4s; z-index: 2; }
 #gh:hover { opacity: 1; }
 #gh svg { width: 100%; height: 100%; display: block; fill: currentColor; }
-/* ---- play / pause: top left of the picture (or in the bar above it), while the pointer moves ---- */
-#transport { position: fixed; z-index: 3; color: #f2efe7; opacity: 0; pointer-events: none; transition: opacity 0.6s; }
+/* ---- the transport: across the top of the picture (the title has the bottom), while the pointer moves ---- */
+#transport { position: fixed; z-index: 3; box-sizing: border-box; padding: 2.4% 3.2% 3.6em; color: #f2efe7;
+  font-family: "PH-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; user-select: none; -webkit-user-select: none;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.62), rgba(0,0,0,0.28) 60%, rgba(0,0,0,0));
+  opacity: 0; pointer-events: none; transition: opacity 0.6s; }
 #transport.on { opacity: 1; pointer-events: auto; transition: opacity 0.15s; }
-#tp-play { all: unset; cursor: pointer; display: grid; place-items: center; box-sizing: border-box;
-  width: clamp(40px, 6vmin, 64px); height: clamp(40px, 6vmin, 64px); padding: 26%; border-radius: 50%;
-  background: rgba(0,0,0,0.38); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); -webkit-tap-highlight-color: transparent; }
-#tp-play:focus-visible { outline: 1px solid rgba(242,239,231,0.6); }
+#transport .row { display: flex; align-items: baseline; gap: 1.6em; font-size: clamp(11px, 1.55vmin, 18px); }
+#tp-play { all: unset; cursor: pointer; width: 1.7em; height: 1.7em; align-self: center; display: grid; place-items: center; opacity: 0.85; }
+#tp-play:hover, #tp-play:focus-visible { opacity: 1; }
 #tp-play svg { width: 100%; height: 100%; fill: currentColor; }
+/* the timecode: D-DIN, every figure in a cell of its own (its figures are proportional) */
+.tc { display: inline-flex; font-size: 1.6em; letter-spacing: 0; white-space: nowrap; }
+.tc i { font-style: normal; display: inline-block; width: 0.56em; text-align: center; }
+.tc i.s { width: 0.3em; }
+.tc i.u { width: auto; padding: 0 0.28em 0 0.06em; font-size: 0.62em; opacity: 0.6; align-self: flex-end; padding-bottom: 0.18em; }
+#tp-to { opacity: 0; transition: opacity 0.2s; }
+#tp-to.on { opacity: 0.75; }
+#tp-off { margin-left: auto; font-size: 1.05em; opacity: 0.6; letter-spacing: 0.04em; }
+/* the shuttle: a tape head held at the centre; pushed right it goes forward,
+   left back, and the further from centre the further it goes, exponentially */
+#shuttle { position: relative; height: clamp(34px, 5.4vmin, 60px); margin-top: 0.4em; cursor: ew-resize; touch-action: none; }
+#shuttle .line { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(242,239,231,0.35); }
+#shuttle .tick { position: absolute; top: 50%; width: 1px; height: 7px; margin-top: -3px; background: rgba(242,239,231,0.45); }
+#shuttle .lab { position: absolute; top: 50%; margin-top: 8px; transform: translateX(-50%); font-size: clamp(9px, 1.15vmin, 13px); letter-spacing: 0.04em; opacity: 0.55; white-space: nowrap; }
+#shuttle .mid { position: absolute; left: 50%; top: 50%; width: 1px; height: 15px; margin-top: -7px; background: rgba(242,239,231,0.7); }
+#head { position: absolute; left: 50%; top: 50%; width: 9px; height: 26px; margin: -13px 0 0 -4.5px; border-radius: 2px;
+  background: #f2efe7; box-shadow: 0 0 0 1px rgba(0,0,0,0.35), 0 0 12px rgba(242,239,231,0.35); transition: left 0.35s cubic-bezier(.2,.9,.3,1.25); }
+#shuttle.drag #head { transition: none; }
+/* in the black bar above a letterboxed picture (portrait), when it fits there */
+#transport.bar { background: none; padding-bottom: 2.4%; }
+/* narrow: the major marks only */
+#transport.narrow .lab.minor { display: none; }
 #msg { position: fixed; left: 4.5vmin; top: 4.5vmin; right: 4.5vmin; color: #f2efe7; font: max(12px, 2vmin) "PH-DIN", Helvetica, sans-serif; white-space: pre-wrap; }
 </style>
 </head>
@@ -50,7 +74,17 @@ body.playing.idle #canvas { cursor: none; }
   <p class="go">click to begin &nbsp;·&nbsp; sound on &nbsp;·&nbsp; f for full screen</p>
 </div>
 <a id="gh" href="https://github.com/i2pi/past-harm" target="_blank" rel="noopener" aria-label="Source on GitHub" title="Source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
-<div id="transport"><button id="tp-play" aria-label="Pause" title="Pause (space)"><svg viewBox="0 0 16 16"><path id="tp-icon" d="M4 2h3v12H4zM9 2h3v12H9z"/></svg></button></div>
+<div id="transport" aria-label="Transport">
+  <div class="row">
+    <button id="tp-play" aria-label="Pause" title="Pause (space)"><svg viewBox="0 0 16 16"><path id="tp-icon" d="M4 2h3v12H4zM9 2h3v12H9z"/></svg></button>
+    <span id="tp-now" class="tc" aria-live="off"></span>
+    <span id="tp-to" class="tc"></span>
+    <span id="tp-off"></span>
+  </div>
+  <div id="shuttle" role="slider" aria-label="Shuttle: drag right to go forward, left to go back" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0" tabindex="0">
+    <div class="line"></div><div class="mid"></div><div id="head"></div>
+  </div>
+</div>
 <div id="msg"></div>
 <script>
 "use strict";
@@ -92,6 +126,16 @@ class Past extends AudioWorkletProcessor {
     this.size = this.x.aw_snap_size();
     this.sent = 0;
     this.port.postMessage({ start: currentFrame });
+    this.port.onmessage = (e) => {
+      const x = this.x, d = e.data;
+      /* exact (restored from a checkpoint and run on) if it can; else the page
+         computes the long jump and sends the engine state to install */
+      if (d.seek !== undefined) { const ok = x.aw_seek_exact(d.seek); this.port.postMessage(ok ? { seeked: 1 } : { warp: d.seek }); }
+      if (d.install !== undefined) {
+        if (d.install.byteLength === x.aw_state_size()) { new Uint8Array(x.memory.buffer, x.aw_state_slot(), d.install.byteLength).set(new Uint8Array(d.install)); x.aw_install(); }
+        this.port.postMessage({ seeked: 0 });
+      }
+    };
   }
   process(inputs, outputs) {
     const out = outputs[0], n = out[0].length, x = this.x;
@@ -132,6 +176,12 @@ async function startAudio(swing) {
   node.port.onmessage = (e) => {
     const d = e.data;
     if (d.start !== undefined) { startFrame = d.start; return; }
+    if (d.seeked !== undefined) { transport.seeked(d.seeked); return; }
+    if (d.warp !== undefined) {						/* a long jump, computed here, off the audio thread */
+      const p = Module._aw_warp(d.warp), n = Module._aw_state_size(), st = HEAPU8.slice(p, p + n);
+      node.port.postMessage({ install: st.buffer }, [st.buffer]);
+      return;
+    }
     if (!d.snaps) { console.warn('worklet message', JSON.stringify(d)); return; }
     const all = new Uint8Array(d.snaps), slot = Module._aw_slot();
     if (Module._aw_main_snap_size() !== d.size) { fail('snapshot layout mismatch'); return; }
@@ -247,31 +297,121 @@ window.addEventListener('resize', showTitle);
 
 /* ---- the transport ---- */
 var transport = (() => {			/* (var: fitCanvas runs before this) */
-  const el = document.getElementById('transport'), play = document.getElementById('tp-play'), icon = document.getElementById('tp-icon');
-  let enabled = false, paused = false, hideT = 0;
+  const el = document.getElementById('transport'), sh = document.getElementById('shuttle'), head = document.getElementById('head');
+  const nowEl = document.getElementById('tp-now'), toEl = document.getElementById('tp-to'), offEl = document.getElementById('tp-off');
+  const play = document.getElementById('tp-play'), icon = document.getElementById('tp-icon');
+  const YEAR = 365.25 * 86400, MIN_OFF = 2, MAX_OFF = 10 * YEAR, DEAD = 0.03;
+  let enabled = false, paused = false, dragging = false, seeking = false, d = 0, hideT = 0, pendingTo = null;
+  /* the head's displacement (-1..1) -> seconds: 2 s at the edge of the dead
+     zone to ten years at the end, exponentially */
+  const offsetOf = (x) => { const a = Math.abs(x); if (a < DEAD) return 0;
+    return Math.sign(x) * MIN_OFF * Math.pow(MAX_OFF / MIN_OFF, (a - DEAD) / (1 - DEAD)); };
+  const posOf = (t) => DEAD + (1 - DEAD) * Math.log(t / MIN_OFF) / Math.log(MAX_OFF / MIN_OFF);
+  /* the scale's marks, both ways */
+  const MINOR = new Set(['1m', '10m', '1w', '1mo']);
+  [[10, '10s'], [60, '1m'], [600, '10m'], [3600, '1h'], [86400, '1d'], [7 * 86400, '1w'], [30 * 86400, '1mo'], [YEAR, '1y'], [MAX_OFF, '10y']].forEach(([t, l]) => {
+    for (const s of [1, -1]) {
+      const x = 50 + 50 * s * posOf(t), tk = document.createElement('div'), lb = document.createElement('div');
+      tk.className = 'tick'; tk.style.left = x + '%';
+      lb.className = MINOR.has(l) || (s < 0 && t === MAX_OFF) ? 'lab minor' : 'lab'; lb.style.left = x + '%'; lb.textContent = (s < 0 ? '\u2212' : '') + l;
+      if (t === MAX_OFF) lb.style.transform = s > 0 ? 'translateX(-100%)' : 'translateX(0)';
+      sh.append(tk, lb);
+    }
+  });
+  const two = (n) => String(n).padStart(2, '0');
+  function tcHTML(t) {								/* YYy DDDd HH:MM:SS:FF, FF at 60 a second */
+    t = Math.max(0, t);
+    const y = Math.floor(t / YEAR); let r = t - y * YEAR;
+    const dd = Math.floor(r / 86400); r -= dd * 86400;
+    const h = Math.floor(r / 3600), m = Math.floor(r / 60) % 60, s = Math.floor(r) % 60, f = Math.floor((r % 1) * 60);
+    let out = '';
+    const cells = (str) => { for (const c of str) out += c === ':' ? '<i class="s">:</i>' : '<i>' + c + '</i>'; };
+    cells(two(y)); out += '<i class="u">y</i>';
+    cells(String(dd).padStart(3, '0')); out += '<i class="u">d</i>';
+    cells(two(h) + ':' + two(m) + ':' + two(s) + ':' + two(f));
+    return out;
+  }
+  function human(o) {								/* +12 s, -3 min, +2.4 h ... */
+    const a = Math.abs(o), sg = o < 0 ? '\u2212' : '+';
+    const u = a < 60 ? [a, 's'] : a < 3600 ? [a / 60, 'min'] : a < 86400 ? [a / 3600, 'h'] : a < 30 * 86400 ? [a / 86400, 'd'] : a < YEAR ? [a / (30.44 * 86400), 'mo'] : [a / YEAR, 'y'];
+    return sg + (u[0] < 10 ? u[0].toFixed(1) : Math.round(u[0])) + '\u2009' + u[1];
+  }
+  const now = () => (Module._web_now ? Module._web_now() : 0);
   function show() {
     if (!enabled) return;
     el.classList.add('on'); clearTimeout(hideT);
-    if (!paused) hideT = setTimeout(() => el.classList.remove('on'), 3000);
+    if (!dragging && !paused) hideT = setTimeout(() => el.classList.remove('on'), 3000);
   }
   function setPaused(p) {
     paused = p;
     icon.setAttribute('d', p ? 'M4 2l10 6-10 6z' : 'M4 2h3v12H4zM9 2h3v12H9z');
     play.setAttribute('aria-label', p ? 'Play' : 'Pause'); play.title = (p ? 'Play' : 'Pause') + ' (space)';
-    Module._web_pause(p ? 1 : 0);				/* the picture holds */
+    Module._web_pause(p ? 1 : 0);
     if (actx) { if (p) actx.suspend(); else actx.resume(); }
     show();
   }
+  function seekTo(t) {
+    if (!audioNode) return;
+    t = Math.max(0, Math.min(t, now() + MAX_OFF));
+    seeking = true; pendingTo = t;
+    toEl.innerHTML = tcHTML(t); toEl.classList.add('on'); offEl.textContent = 'seeking\u2026';
+    if (paused) setPaused(false);
+    audioNode.port.postMessage({ seek: t });
+  }
+  function frame() {
+    if (enabled && el.classList.contains('on')) {
+      nowEl.innerHTML = tcHTML(now());
+      if (dragging) {
+        const o = offsetOf(d), t = Math.max(0, now() + o);
+        toEl.innerHTML = tcHTML(t); toEl.classList.toggle('on', o !== 0);
+        offEl.textContent = o === 0 ? '' : (now() + o < 0 ? 'to the start' : human(o));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  function setD(x) { d = Math.max(-1, Math.min(1, x)); head.style.left = (50 + 50 * d) + '%'; sh.setAttribute('aria-valuenow', d.toFixed(2)); }
+  function fromEvent(e) { const r = sh.getBoundingClientRect(); return ((e.clientX - r.left) / r.width) * 2 - 1; }
+  sh.addEventListener('pointerdown', (e) => {
+    if (!enabled) return;
+    dragging = true; sh.classList.add('drag'); sh.setPointerCapture(e.pointerId); setD(fromEvent(e)); show(); e.preventDefault();
+  });
+  sh.addEventListener('pointermove', (e) => { if (dragging) setD(fromEvent(e)); });
+  const release = () => {
+    if (!dragging) return;
+    dragging = false; sh.classList.remove('drag');
+    const o = offsetOf(d);
+    setD(0);
+    if (o !== 0) seekTo(now() + o); else { toEl.classList.remove('on'); offEl.textContent = ''; }
+    show();
+  };
+  sh.addEventListener('pointerup', release); sh.addEventListener('pointercancel', release);
   play.addEventListener('click', (e) => { e.stopPropagation(); setPaused(!paused); });
-  ['pointermove', 'pointerdown', 'touchstart'].forEach((ev) => window.addEventListener(ev, show, { passive: true }));
+  ['pointermove', 'pointerdown', 'touchstart', 'wheel'].forEach((ev) => window.addEventListener(ev, show, { passive: true }));
   return {
     enable() { enabled = true; show(); },
-    key(e) { if (enabled && (e.key === ' ' || e.key === 'k')) { setPaused(!paused); return true; } return false; },
+    key(e) {
+      if (!enabled) return false;
+      if (e.key === ' ' || e.key === 'k') { setPaused(!paused); return true; }
+      const step = e.shiftKey ? 60 : 10;
+      if (e.key === 'ArrowRight') { seekTo(now() + step); return true; }
+      if (e.key === 'ArrowLeft') { seekTo(now() - step); return true; }
+      if (e.key === 'Home') { seekTo(0); return true; }
+      return false;
+    },
+    seeked(exact) {
+      seeking = false;
+      offEl.textContent = exact ? '' : 'entered';
+      setTimeout(() => { if (!dragging && !seeking) { toEl.classList.remove('on'); offEl.textContent = ''; } }, exact ? 900 : 2200);
+      show();
+    },
     layout(left, top, w, h) {
-      const m = Math.round(Math.min(w, h) * 0.04);
-      el.style.left = (left + m) + 'px';
-      const b = el.offsetHeight || 48;
-      el.style.top = (top >= b + 2 * m ? top - b - m : top + m) + 'px';	/* in the bar above, if there is one */
+      el.style.left = left + 'px'; el.style.width = w + 'px'; el.style.bottom = 'auto';
+      el.classList.toggle('narrow', w < 720);
+      /* in the bar above the picture if it fits there, else over the picture's top */
+      el.classList.remove('bar'); el.style.top = top + 'px';
+      const need = el.offsetHeight;
+      if (top >= need + 8) { el.classList.add('bar'); el.style.top = (top - el.offsetHeight) + 'px'; }
     },
   };
 })();

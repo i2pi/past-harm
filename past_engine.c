@@ -983,3 +983,78 @@ void past_coefficients (past_state *s)
 	s->drive_v   = cos (i / 384972.0);
 }
 
+/* (added) enter the piece at sample `target` without playing up to it (the
+   transport's long jumps). The structure is computed exactly, as if every
+   sample before had been played: the clock (min, sec), the tick count, the
+   scale rows' swaps on the 17 / 19 / 23-tick clocks, and the rhythm's
+   mutations; the mood, swells and voice arc follow from the sample index.
+   What only exists by playing -- the sounding voices, the feedback
+   filters' memory -- starts fresh and settles within seconds. Call after
+   past_init. Ten years is ~1.7e9 ticks, ~2.6e8 row swaps: about a second. */
+void past_warp (past_state *s, uint64_t target)
+{
+	const int L = PAST_SCALE_LEN;
+	uint64_t c, cmax, tick = 0, t, n17, n19, n23;
+	int64_t bar;
+	if (target == 0) return;
+	/* ticks: sample i (1..target) ticks when i % tper == 1, tper set at the
+	   top of past_next from the clock as it stood: second c = i / 44100 */
+	cmax = target / 44100;
+	for (c = 0; c <= cmax; c++)
+	{
+		uint64_t m = c / 60, sc = c % 60, lo = c * 44100, hi = c * 44100 + 44099, tper;
+		long tp = 26384 - (long) m * 30 - (long) (sc % 3);
+		if (lo < 1) lo = 1;
+		if (hi > target) hi = target;
+		tper = (uint64_t) (tp < 8192 ? 8192 : tp);
+		if (tp <= 8192 - 2 && m >= 607)
+		{
+			/* from here on tper stays 8192: the rest in one count */
+			hi = target;
+			tick += (hi + tper - 1) / tper - (lo + tper - 2) / tper;
+			break;
+		}
+		/* count of i in [lo, hi] with i % tper == 1 */
+		if (hi >= lo) tick += (hi + tper - 1) / tper - (lo + tper - 2) / tper;
+	}
+	s->i = target;
+	s->sec = (int) (((target + 1) / 44100) % 60);
+	s->min = (int) ((target + 1) / 44100 / 60);
+	/* the rows: every swap in order (at a tick, 17's before 19's before 23's) */
+	n17 = 17; n19 = 18; n23 = 22;
+	for (;;)
+	{
+		int j, k;
+		t = n17 < n19 ? (n17 < n23 ? n17 : n23) : (n19 < n23 ? n19 : n23);
+		if (t > tick) break;
+		j = (int) (t % (uint64_t) (L - 1));
+		if (t == n17)
+		{
+			k = s->scale[j]; s->scale[j] = s->scale[(j + 1) % L]; s->scale[(j + 1) % L] = k;
+			n17 += 17;
+		}
+		if (t == n19)
+		{
+			k = s->scale2[j]; s->scale2[j] = s->scale[(j + 1) % L]; s->scale[(j + 1) % L] = k;
+			n19 += 19;
+		}
+		if (t == n23)
+		{
+			k = s->scale1[j]; s->scale1[j] = s->scale2[(j + 1) % L];
+			s->scale2[(j + 1) % L] = k + 12 - s->scale[j % L] % 6;
+			n23 += 23;
+		}
+	}
+	s->tick = (int) tick; s->otick = s->tick;
+	/* the bars, and the mutations at their downbeats (sample bar * PAST_BAR) */
+	bar = (int64_t) (target / PAST_BAR);
+	s->bar = (int) bar; s->phrase_bar = s->bar % 4;
+	if (s->endless && s->poly)
+		while (s->mut_next_bar <= bar)
+		{
+			s->bar = s->mut_next_bar;
+			mutate (s);
+			s->mut_next_bar = s->bar + 121 + (int) (mut_rand (s) % 41);
+		}
+	s->bar = (int) bar; s->phrase_bar = s->bar % 4;
+}
