@@ -118,10 +118,11 @@ async function startAudio(swing) {
   await actx.resume();
 }
 
-/* ---- the canvas: CSS size, capped (?px=W*H to change) ---- */
+/* ---- the canvas: CSS size (phones capped; ?px=W*H caps it) ---- */
 const canvas = document.getElementById('canvas');
 const mobile = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
-const MAX_PX = +params.get('px') || (mobile ? 1280 * 720 : 1920 * 1080);
+/* desktop: uncapped, every CSS pixel like the macOS window's points; phones: 720p */
+const MAX_PX = +params.get('px') || (mobile ? 1280 * 720 : Infinity);
 function fitCanvas() {
   /* CSS pixels, as the macOS app renders in points (?hidpi for device pixels:
      sharper, but the blur, glow and 1-pixel lines are then half as strong) */

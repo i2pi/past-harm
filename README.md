@@ -61,7 +61,8 @@ Writes `build/web/past-harm.html`, one self-contained page (~420 KB) that runs
 from a file or any web server: click to start, `f` or double-click for full
 screen. The music runs in an AudioWorklet (audio.c built with
 `-DAUDIO_WORKLET`), the picture is main.c on WebGL2 through `web/gl_compat.c`.
-The canvas is capped at 1920×1080 (1280×720 on phones); `?px=8294400` raises it.
+The canvas is the window's size in CSS pixels, as the macOS app renders in points
+(capped at 1280×720 on phones); `?px=2073600` caps it at that many pixels.
 
 ## Docs
 
