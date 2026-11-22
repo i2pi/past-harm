@@ -65,5 +65,5 @@ data = {
     'total': sum(1 for e in ev if 'n' in e),
 }
 page = open(os.path.join(HERE, 'musicians_template.html')).read().replace('/*DATA*/null', json.dumps(data, separators=(',', ':')))
-open(os.path.join(ROOT, 'for_musicians.html'), 'w').write(page)
+open(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'for_musicians.html'), 'w').write(page)
 print('ok', len(page), 'notes', data['total'], 'changed by harmony', data['changed'])

@@ -44,5 +44,5 @@ page = open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'stateme
 for k, v in C.items():
     page = page.replace('{{' + k + '}}', v)
 assert '{{' not in page, page[page.index('{{'):page.index('{{') + 40]
-open(os.path.join(ROOT, 'technical_statement.html'), 'w').write(page)
+open(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'technical_statement.html'), 'w').write(page)
 print('ok', len(page))

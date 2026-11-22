@@ -1,7 +1,10 @@
 # PAST HARM
 
 Joshua Reich, Generative Works 1996–2026. past (2003) and harm (2003) playing
-the p10m1 (2012) cube scene. How it works: `technical_statement.html`.
+the p10m1 (2012) cube scene.
+
+- [Technical statement](docs/TECHNICAL_STATEMENT.md): the ideas, the mathematics and the code
+- [For musicians](docs/FOR_MUSICIANS.md): melody, harmony, rhythm, timbre and effects, with scores
 
 ## Requirements
 
@@ -57,6 +60,11 @@ profile (see the script's header).
     tools/glasslab 1600 900 lab.ppm           # a still
     tools/glasslab 960 540 x 150 frames/      # 150 frames, spinning
 
-## Technical statement
+## Docs
 
-    python3 tools/mkstatement.py              # regenerate technical_statement.html from the source
+    make tools/musiclog && python3 tools/mkdocs.py
+
+Regenerates `docs/` from the source: the code excerpts are copied from the
+files, the scores are transcribed from what the engine plays, and the figures
+are rendered with headless Google Chrome (set `CHROME` to its path if it is
+elsewhere).
