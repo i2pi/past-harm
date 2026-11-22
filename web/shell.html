@@ -6,20 +6,25 @@
 <title>PAST HARM</title>
 <style>
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-#canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background: #000; }
+/* the piece: always 16:9 landscape, the largest that fits, centred on black (fitCanvas) */
+#canvas { position: fixed; display: block; background: #000; }
 body.playing.idle #canvas { cursor: none; }
 #start { position: fixed; inset: 0; color: #f2efe7; cursor: pointer;
   font-family: "PH-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; user-select: none;
   -webkit-tap-highlight-color: transparent; background: radial-gradient(ellipse at 70% 30%, #1d2a44 0%, #07090d 70%); }
 /* the title: the piece's own (CoreText's setting, scaled, in title.c's layout), drawn by showTitle */
 #tcan { position: absolute; display: block; }
-#start .go { position: absolute; right: 4.5vh; bottom: 4.5vh; margin: 0; font-size: 2.4vh; letter-spacing: 0.04em; opacity: 0.75; }
+#start .go { position: absolute; right: 4.5vmin; bottom: 4.5vmin; margin: 0; font-size: max(12px, 2.4vmin); letter-spacing: 0.04em; opacity: 0.75; }
+/* tall or narrow screens: the hint at the top, clear of the title and the GitHub mark */
+@media (max-aspect-ratio: 4/3) {
+  #start .go { top: 4.5vmin; bottom: auto; left: 4.5vmin; right: calc(9vmin + max(22px, 3.2vmin)); }
+}
 #start.busy .go { opacity: 0.35; }
-#gh { position: fixed; top: 4.5vh; right: 4.5vh; width: 3.2vh; height: 3.2vh; min-width: 22px; min-height: 22px; color: #f2efe7;
+#gh { position: fixed; top: 4.5vmin; right: 4.5vmin; width: 3.2vmin; height: 3.2vmin; min-width: 22px; min-height: 22px; color: #f2efe7;
   opacity: 0.7; transition: opacity 0.4s; z-index: 2; }
 #gh:hover { opacity: 1; }
 #gh svg { width: 100%; height: 100%; display: block; fill: currentColor; }
-#msg { position: fixed; left: 4.5vh; top: 4.5vh; right: 4.5vh; color: #f2efe7; font: 2vh "PH-DIN", Helvetica, sans-serif; white-space: pre-wrap; }
+#msg { position: fixed; left: 4.5vmin; top: 4.5vmin; right: 4.5vmin; color: #f2efe7; font: max(12px, 2vmin) "PH-DIN", Helvetica, sans-serif; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -123,17 +128,25 @@ const canvas = document.getElementById('canvas');
 const mobile = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
 /* desktop: uncapped, every CSS pixel like the macOS window's points; phones: 720p */
 const MAX_PX = +params.get('px') || (mobile ? 1280 * 720 : Infinity);
+if (mobile) document.querySelector('#start .go').innerHTML = 'tap to begin &nbsp;·&nbsp; sound on';
 function fitCanvas() {
+  /* 16:9 landscape whatever the window's shape or orientation: the largest
+     that fits, centred, with black bars */
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const cw = Math.max(16, Math.floor(Math.min(vw, vh * 16 / 9))), ch = Math.max(9, Math.floor(cw * 9 / 16));
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+  canvas.style.left = Math.floor((vw - cw) / 2) + 'px'; canvas.style.top = Math.floor((vh - ch) / 2) + 'px';
   /* CSS pixels, as the macOS app renders in points (?hidpi for device pixels:
      sharper, but the blur, glow and 1-pixel lines are then half as strong) */
   const dpr = params.has('hidpi') ? (window.devicePixelRatio || 1) : 1;
-  let w = canvas.clientWidth * dpr, h = canvas.clientHeight * dpr;
+  let w = cw * dpr, h = ch * dpr;
   const s = Math.min(1, Math.sqrt(MAX_PX / (w * h)));
   w = Math.max(16, Math.round(w * s)); h = Math.max(16, Math.round(h * s));
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
 }
 let resizeTimer = 0;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fitCanvas, 250); });
+fitCanvas();
 
 /* ---- the title: set here in D-DIN with title.c's layout (sizes from the
    frame height; PAST and HARM stacked by cap height; the credit lines by the
@@ -190,7 +203,9 @@ Module.titleMask = function (W, H, out) {
 function showTitle() {
   const c = document.getElementById('tcan');
   if (!c) return;
-  const W = window.innerWidth, H = window.innerHeight, t = titleLayout(W, H);
+  /* sized by the window's height, as in the piece, but never wider than the
+     window allows (portrait, narrow): the layout is ~0.54 H wide with margins */
+  const W = window.innerWidth, H = Math.min(window.innerHeight, W / 0.56), t = titleLayout(W, H);
   if (!t) return;
   const dpr = window.devicePixelRatio || 1;
   c.width = t.tw; c.height = t.th;
