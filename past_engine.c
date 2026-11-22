@@ -8,6 +8,7 @@
  * the original's; p10m1-past turns them on (see voice_cap, snap_note, choir).
  */
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -97,7 +98,7 @@ static void trigger (past_state *s, int note, float dur, float amp, float a, flo
 		int st = (int) ((s->i % PAST_BAR) / 8192), g = s->gene[1];
 		if (st % g != 0 || st + g > 16) amp *= 0.5f;	/* accents every g steps; the last group takes the rest */
 	}
-	if (s->endless) while (note > 44) note -= 12;		/* (added) see past_next */
+	if (s->endless && note > 44) note -= 12 * ((note - 33) / 12);	/* (added) see past_next; down by octaves to 44 or below (in one step: the rows rise for ever) */
 	if (s->arc && s->mood < 0.5f && dur < 0.25f) note -= 12;	/* (added) the opening: an octave down */
 	if (s->harmony) note = snap_note (s, note);			/* (added) */
 
@@ -327,14 +328,14 @@ static int poly_div (const past_state *s, int k)
 }
 
 /* which hit of its bar layer k is on at bar position b */
-static int poly_index (const past_state *s, int k, unsigned long b)
+static int poly_index (const past_state *s, int k, uint64_t b)
 {
 	if (k == 2)		/* the rim: every g steps (3: steps 0, 3, 6, 9, 12), the last group takes the rest */
 	{
 		int g = s->gene[1], st = (int) (b / 8192) / g, last = (16 - g) / g;
 		return st > last ? last : st;
 	}
-	return (int) ((b * (unsigned long) poly_div (s, k)) / PAST_BAR);
+	return (int) ((b * (uint64_t) poly_div (s, k)) / PAST_BAR);
 }
 
 /* (added) the mutations. Each gene has its pool; a new value must differ
@@ -393,7 +394,7 @@ static void poly_step (past_state *s, float *ol, float *or_)
 	static const float level[PAST_POLY] = { 4200, 2600, 1500, 1050, 850 };
 	static const float tau[PAST_POLY] = { 0.38f, 0.22f, 0.05f, 0.9f, 0.025f };
 	double R = 280.1 * pow (2.0, s->key_pc / 12.0);	/* the key's root, as the choir hears it */
-	unsigned long b = s->i % PAST_BAR;
+	uint64_t b = s->i % PAST_BAR;
 	float  gate[PAST_POLY];
 	int    k;
 
@@ -412,7 +413,7 @@ static void poly_step (past_state *s, float *ol, float *or_)
 	gate[4] = s->arc_w > 0.84f;
 	/* the beats in 3: the choir's waiting notes are sung, and it breathes */
 	{
-		int b3 = (int) ((b * (unsigned long) s->gene[0]) / PAST_BAR);
+		int b3 = (int) ((b * (uint64_t) s->gene[0]) / PAST_BAR);
 		if (b3 != s->poly_last[1] || s->poly_last[1] < 0)
 		{
 			int n;
@@ -608,7 +609,7 @@ static void trigger_solo (past_state *s, int note)
 	int o = 0;
 	while ((o < PAST_OSCS) && (s->osc[o].is_on)) o++;
 	if (o >= PAST_OSCS) return;
-	if (s->endless) while (note > 44) note -= 12;
+	if (s->endless && note > 44) note -= 12 * ((note - 33) / 12);
 	if (s->harmony) note = snap_note (s, note);
 	s->osc[o].is_on = 1;
 	s->osc[o].a = 0.25f;
@@ -686,7 +687,7 @@ int past_next (past_state *s, short *left, short *right)
 	int			j, k;
 	const int	scale_len = PAST_SCALE_LEN;
 	int			*scale = s->scale, *scale1 = s->scale1, *scale2 = s->scale2;
-	unsigned long i;
+	uint64_t i;
 
 	/* (changed) endless: past stopped at 8:00; carried on, its maths keeps
 	   going -- the tick count, the scale swaps, every sin(i/...) -- except
@@ -745,7 +746,7 @@ int past_next (past_state *s, short *left, short *right)
 	}
 
 	s->otick = s->tick;
-	if ((i % (unsigned long) tper == 1))
+	if ((i % (uint64_t) tper == 1))
 	{
 		s->tick++;
 		if (s->tick % 17 == 0)
@@ -787,7 +788,7 @@ int past_next (past_state *s, short *left, short *right)
 	/* (added) swing: on odd 8192-sample steps the three step-grid triggers
 	   below fire `swing` samples late. With swing = 0, ii == i (original). */
 	{
-	unsigned long ii = ((i / 8192) % 2) ? i - (unsigned long) s->swing : i;
+	uint64_t ii = ((i / 8192) % 2) ? i - (uint64_t) s->swing : i;
 	if ((ii % 8192== 0) && ((s->tick/13) % 3) && (s->sec < 20))
 	{
 		trigger (s, scale[s->n%scale_len] + 12, 0.01,  1.0 - 0.5*sin(i/123497.0), 0.1, 3.0);
@@ -980,4 +981,80 @@ void past_coefficients (past_state *s)
 	s->fb_x_oy3  = 0.53 * sin (i / 33385.0);
 	s->drive_u   = sin (i / 319732.0);
 	s->drive_v   = cos (i / 384972.0);
+}
+
+/* (added) enter the piece at sample `target` without playing up to it (the
+   transport's long jumps). The structure is computed exactly, as if every
+   sample before had been played: the clock (min, sec), the tick count, the
+   scale rows' swaps on the 17 / 19 / 23-tick clocks, and the rhythm's
+   mutations; the mood, swells and voice arc follow from the sample index.
+   What only exists by playing -- the sounding voices, the feedback
+   filters' memory -- starts fresh and settles within seconds. Call after
+   past_init. Ten years is ~1.7e9 ticks, ~2.6e8 row swaps: about a second. */
+void past_warp (past_state *s, uint64_t target)
+{
+	const int L = PAST_SCALE_LEN;
+	uint64_t c, cmax, tick = 0, t, n17, n19, n23;
+	int64_t bar;
+	if (target == 0) return;
+	/* ticks: sample i (1..target) ticks when i % tper == 1, tper set at the
+	   top of past_next from the clock as it stood: second c = i / 44100 */
+	cmax = target / 44100;
+	for (c = 0; c <= cmax; c++)
+	{
+		uint64_t m = c / 60, sc = c % 60, lo = c * 44100, hi = c * 44100 + 44099, tper;
+		long tp = 26384 - (long) m * 30 - (long) (sc % 3);
+		if (lo < 1) lo = 1;
+		if (hi > target) hi = target;
+		tper = (uint64_t) (tp < 8192 ? 8192 : tp);
+		if (tp <= 8192 - 2 && m >= 607)
+		{
+			/* from here on tper stays 8192: the rest in one count */
+			hi = target;
+			tick += (hi + tper - 1) / tper - (lo + tper - 2) / tper;
+			break;
+		}
+		/* count of i in [lo, hi] with i % tper == 1 */
+		if (hi >= lo) tick += (hi + tper - 1) / tper - (lo + tper - 2) / tper;
+	}
+	s->i = target;
+	s->sec = (int) (((target + 1) / 44100) % 60);
+	s->min = (int) ((target + 1) / 44100 / 60);
+	/* the rows: every swap in order (at a tick, 17's before 19's before 23's) */
+	n17 = 17; n19 = 18; n23 = 22;
+	for (;;)
+	{
+		int j, k;
+		t = n17 < n19 ? (n17 < n23 ? n17 : n23) : (n19 < n23 ? n19 : n23);
+		if (t > tick) break;
+		j = (int) (t % (uint64_t) (L - 1));
+		if (t == n17)
+		{
+			k = s->scale[j]; s->scale[j] = s->scale[(j + 1) % L]; s->scale[(j + 1) % L] = k;
+			n17 += 17;
+		}
+		if (t == n19)
+		{
+			k = s->scale2[j]; s->scale2[j] = s->scale[(j + 1) % L]; s->scale[(j + 1) % L] = k;
+			n19 += 19;
+		}
+		if (t == n23)
+		{
+			k = s->scale1[j]; s->scale1[j] = s->scale2[(j + 1) % L];
+			s->scale2[(j + 1) % L] = k + 12 - s->scale[j % L] % 6;
+			n23 += 23;
+		}
+	}
+	s->tick = (int) tick; s->otick = s->tick;
+	/* the bars, and the mutations at their downbeats (sample bar * PAST_BAR) */
+	bar = (int64_t) (target / PAST_BAR);
+	s->bar = (int) bar; s->phrase_bar = s->bar % 4;
+	if (s->endless && s->poly)
+		while (s->mut_next_bar <= bar)
+		{
+			s->bar = s->mut_next_bar;
+			mutate (s);
+			s->mut_next_bar = s->bar + 121 + (int) (mut_rand (s) % 41);
+		}
+	s->bar = (int) bar; s->phrase_bar = s->bar % 4;
 }

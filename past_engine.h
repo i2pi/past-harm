@@ -8,6 +8,8 @@
 #ifndef PAST_ENGINE_H
 #define PAST_ENGINE_H
 
+#include <stdint.h>
+
 #define PAST_OSCS		16
 #define PAST_SCALE_LEN	9
 #define PAST_RATE		44100
@@ -34,7 +36,7 @@ typedef struct
 {
 	/* --- the original program's state --- */
 	past_osc	osc[PAST_OSCS];
-	unsigned long i;		/* sample counter */
+	uint64_t i;		/* sample counter */
 	float	x, y, ox1, oy1, ox2, oy2, ox3, oy3;
 	float	u, v;
 	int		tick, otick;
@@ -116,6 +118,9 @@ void	past_init (past_state *s);
 void	past_prepare_choir (void);
 /* advance one sample; returns 0 once the piece has ended (8:00) */
 int		past_next (past_state *s, short *left, short *right);
+/* (added) enter the piece at sample `target` (after past_init): the clock,
+   ticks, scale rows and mutations exact; voices and filters fresh */
+void	past_warp (past_state *s, uint64_t target);
 /* (added) fill the fb_* / drive_* fields from the current sample position */
 void	past_coefficients (past_state *s);
 

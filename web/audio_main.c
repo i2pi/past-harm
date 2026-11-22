@@ -3,6 +3,7 @@
  * worklet posts its snapshots here, and the page tells us which output frame
  * is audible now. */
 #include <emscripten.h>
+#include <stdint.h>
 #include <string.h>
 #include "../audio.h"
 
@@ -10,7 +11,7 @@
 #define EXPORT	EMSCRIPTEN_KEEPALIVE
 
 static past_snap		ring[RING];
-static unsigned long	ring_n;
+static uint64_t	ring_n;
 static double			playing;			/* audible output frame (the page: AudioContext time) */
 
 /* the page: a snapshot's bytes (written into the buffer from aw_slot) */
@@ -28,7 +29,7 @@ int  audio_start (int mute) { (void) mute; return 0; }	/* started by the page, o
 
 int audio_now (past_snap *out, double *seconds)
 {
-	unsigned long lo, hi, k;
+	uint64_t lo, hi, k;
 	int found = 0, off = audio_offline_now (out, seconds);
 	if (off >= 0) return off;
 	playing = js_audible ();
@@ -39,6 +40,7 @@ int audio_now (past_snap *out, double *seconds)
 		for (k = hi + 1; k-- > lo; )
 			if ((double) ring[k % RING].out <= playing || k == lo) { *out = ring[k % RING]; found = 1; break; }
 	}
-	if (seconds) *seconds = (found ? out->out : (playing > 0 ? playing : 0)) / (double) PAST_RATE;
+	/* the piece's time (the engine's sample; jumps with the transport) */
+	if (seconds) *seconds = (found ? (double) out->sample : (playing > 0 ? playing : 0)) / (double) PAST_RATE;
 	return found;
 }

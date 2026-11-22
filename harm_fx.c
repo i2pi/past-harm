@@ -27,6 +27,7 @@
  * absolute sum is at most 0.95. The unscaled gains are kept for the visuals.
  */
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "i386conv.h"
@@ -62,7 +63,7 @@ static short	convolve (short x, circBufT *buf)
 	return (i386_fists (fsum + bsum));
 }
 
-static unsigned int	click1 (unsigned long i)
+static unsigned int	click1 (uint64_t i)
 {
 		unsigned int outl = 0, b, c;
 
@@ -75,7 +76,7 @@ static unsigned int	click1 (unsigned long i)
 		return (outl);
 }
 
-static unsigned int	click2 (unsigned long i)
+static unsigned int	click2 (uint64_t i)
 {
 		unsigned int outl = 0;
 
@@ -92,7 +93,7 @@ static unsigned int	click2 (unsigned long i)
 		return (outl);
 }
 
-static unsigned int	click3 (unsigned long i)
+static unsigned int	click3 (uint64_t i)
 {
 		unsigned int outl = 0;
 
@@ -146,7 +147,7 @@ void harm_set_key (harm_state *h, int pc)
 }
 
 /* harm3.c chords(i), re-pitched: one chord per 100000 samples, then a rest */
-static float chords_rp (harm_state *h, unsigned long i)
+static float chords_rp (harm_state *h, uint64_t i)
 {
 	int set = i < 100000 ? 0 : i < 200000 ? 1 : i < 300000 ? 2 : 3, n;
 	float v = 0;
@@ -162,7 +163,7 @@ static float chords_rp (harm_state *h, unsigned long i)
 }
 
 /* harm3.c swell(i), re-pitched (its amplitude envelopes still follow i) */
-static float swell_rp (harm_state *h, unsigned long i)
+static float swell_rp (harm_state *h, uint64_t i)
 {
 	static const double P[5] = { 10, 30, 100, 120, 12 };
 	int n;
@@ -208,7 +209,7 @@ static float ramp (float *e, int on)
 
 static void harm_drums (harm_state *h, float out[3])
 {
-	unsigned long t = h->t, b = t % HB;
+	uint64_t t = h->t, b = t % HB;
 	double R = 280.1 * pow (2.0, h->key_pc / 12.0), f;
 	float on_arc[4];
 	int k;
@@ -220,15 +221,15 @@ static void harm_drums (harm_state *h, float out[3])
 
 	/* click1: the blip, off the beat */
 	{
-		unsigned long bb = t % 278627, cc = t % 19327;
-		int on = b >= HB * 3 / 8 && b < HB * 3 / 8 + (unsigned long) (100 * HSC);
+		uint64_t bb = t % 278627, cc = t % 19327;
+		int on = b >= HB * 3 / 8 && b < HB * 3 / 8 + (uint64_t) (100 * HSC);
 		float e = ramp (&h->edge[0], on);
 		out[0] = e > 1e-4f ? h->g_dr[0] * e * (float) (2910.0 * (sin ((t + bb) / 70.0) * (cos (cc / 1900.0) * sin (t / 140.0)))) : 0;
 	}
 	/* click2: the thump on the downbeat, and the 11:8 tick */
 	{
-		int on_lo = b < (unsigned long) (5930 * HSC);
-		int on_hi = (b % (HB / 8)) < (HB / 8) * 3 / 10 && (b % (HB / (unsigned long) h->tdiv)) < (unsigned long) (500 * HSC);
+		int on_lo = b < (uint64_t) (5930 * HSC);
+		int on_hi = (b % (HB / 8)) < (HB / 8) * 3 / 10 && (b % (HB / (uint64_t) h->tdiv)) < (uint64_t) (500 * HSC);
 		float elo = ramp (&h->edge[1], on_lo), ehi;
 		for (f = R; f >= 110.0; f *= 0.5) ;
 		while (f < 55.0) f *= 2.0;
@@ -260,7 +261,7 @@ static void harm_drums (harm_state *h, float out[3])
 
 void harm_init (harm_state *h)
 {
-	unsigned long i;
+	uint64_t i;
 	memset (h, 0, sizeof *h);
 	h->ldiv = 5; h->rdiv = 7; h->tdiv = 11;		/* (added) the genes' first values */
 	for (i = 0; i < CHANS; i++)
@@ -303,7 +304,7 @@ static void stabilise (harm_state *h, int j)
 static short soft (float x) { return (short) lrintf (32767.0f * tanhf (x / 32767.0f)); }
 
 /* (added) a tap must fit the network's buffer: fold it down by octaves */
-static unsigned int fold_tap (unsigned long t)
+static unsigned int fold_tap (uint64_t t)
 {
 	while (t > 49000) t /= 2;
 	return (unsigned int) t;
@@ -367,7 +368,7 @@ void harm_step (harm_state *h, short in_l, short in_r, short *out_l, short *out_
 	unsigned int	*chan = h->chan;
 	char			*chanon = h->chanon, *nofx = h->nofx, *nofxfeed = h->nofxfeed;
 	circBufT		*cbuf = h->cbuf;
-	unsigned long	j, i, k, c;
+	uint64_t	j, i, k, c;
 	float			side[2] = { 0, 0 }, clicks = 0;
 	short			past[2];
 
@@ -498,7 +499,7 @@ void harm_step (harm_state *h, short in_l, short in_r, short *out_l, short *out_
 			   an octave */
 			if (j == 3)
 			{
-				unsigned long D = (unsigned long) h->rdiv;
+				uint64_t D = (uint64_t) h->rdiv;
 				cbuf[j].tap[4].tapnum = fold_tap (HB * 2 / D);	/* 37449: two sevenths */
 				cbuf[j].tap[4].gback = 0.20 * sin (k/8571.0) * sin (i/25000.0) + 0.15;
 				cbuf[j].tap[5].tapnum = fold_tap (HB / D);		/* 18725 */
@@ -508,7 +509,7 @@ void harm_step (harm_state *h, short in_l, short in_r, short *out_l, short *out_
 			} else
 			if (j == 2)
 			{
-				unsigned long D = (unsigned long) h->ldiv;
+				uint64_t D = (uint64_t) h->ldiv;
 				cbuf[j].tap[2].tapnum = fold_tap (HB / (4 * D));	/* 6553: quintuplet sixteenths */
 				cbuf[j].tap[2].gback = 0.2 * sin (i / 1234.0);
 				cbuf[j].tap[3].tapnum = fold_tap (HB / (2 * D));	/* 13107 */
@@ -523,7 +524,7 @@ void harm_step (harm_state *h, short in_l, short in_r, short *out_l, short *out_
 			}
 			stabilise (h, (int) j);		/* (added) */
 		}
-		/* q was a 32-bit unsigned long on i386 (wraps via fistpll) */
+		/* q was a 32-bit uint64_t on i386 (wraps via fistpll) */
 		h->q = i386_fistu ((double) h->q + 2 + (double) (float) k * sin ((float) k / ((float) h->z+1.0)));
 
 		h->z = h->q % 3137977;

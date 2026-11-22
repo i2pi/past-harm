@@ -1800,6 +1800,11 @@ static void key (unsigned char k, int x, int y)
    renders in points; capped); the frame follows it. The picture is a
    per-frame process (blur, feedback, echoes), made at 60 fps: on faster
    displays (120 Hz) every other refresh is skipped. */
+/* the page's transport: paused (the picture holds), and the piece's time */
+static int web_paused;
+EMSCRIPTEN_KEEPALIVE void web_pause (int p) { web_paused = p; }
+EMSCRIPTEN_KEEPALIVE double web_now (void) { return now_s; }
+
 static void web_frame (void)
 {
 	static double next, prev, period = 1000.0 / 60.0;
@@ -1815,6 +1820,7 @@ static void web_frame (void)
 		else { copy_pass (NULL, pool[3].tex); glUseProgram (0); EM_ASM ({ document.title = 'frame ready'; }); }	/* A: the last frame */
 		return;
 	}
+	if (web_paused && frames > 0) { copy_pass (NULL, pool[3].tex); glUseProgram (0); return; }	/* hold */
 	if (prev > 0 && now - prev < 100.0) period += 0.1 * (now - prev - period);	/* the display's refresh */
 	prev = now;
 	if (now < next - 0.5 * period) return;				/* due at the nearest refresh */

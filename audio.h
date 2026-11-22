@@ -5,6 +5,7 @@
 #define AUDIO_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include "past_engine.h"
 #include "harm_fx.h"
 #include "reverb.h"
@@ -13,8 +14,8 @@
 
 typedef struct
 {
-	unsigned long out;			/* output frame index at the end of this block */
-	unsigned long sample;		/* past's sample index (slower during the time shift) */
+	uint64_t out;			/* output frame index at the end of this block */
+	uint64_t sample;		/* past's sample index (slower during the time shift) */
 	int		tick, min, sec, done;
 	int		scale[PAST_SCALE_LEN], scale1[PAST_SCALE_LEN], scale2[PAST_SCALE_LEN];
 	float	env[PAST_OSCS];		/* voice envelopes (max over the block) */

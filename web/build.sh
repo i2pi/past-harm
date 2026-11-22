@@ -15,8 +15,8 @@ mkdir -p "$OUT"
 emcc -O3 -ffp-contract=off -DAUDIO_WORKLET \
 	audio.c past_engine.c harm_fx.c key.c reverb.c \
 	-sSTANDALONE_WASM --no-entry -sFILESYSTEM=0 \
-	-sINITIAL_MEMORY=64MB -sALLOW_MEMORY_GROWTH=0 -sSTACK_SIZE=1MB \
-	-sEXPORTED_FUNCTIONS=_aw_init,_aw_render,_aw_snaps,_aw_snap,_aw_snap_size \
+	-sINITIAL_MEMORY=64MB -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=256MB -sSTACK_SIZE=1MB \
+	-sEXPORTED_FUNCTIONS=_aw_init,_aw_render,_aw_snaps,_aw_snap,_aw_snap_size,_aw_seek_exact,_aw_install,_aw_state_slot,_aw_state_size \
 	-o "$OUT/engine.wasm"
 
 # the picture: main.c on WebGL2
@@ -25,7 +25,7 @@ emcc -O3 -Wno-deprecated-declarations \
 	-DAUDIO_WORKLET -ffp-contract=off audio.c past_engine.c harm_fx.c key.c reverb.c \
 	-sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 \
 	-sALLOW_MEMORY_GROWTH=1 -sINVOKE_RUN=0 -sENVIRONMENT=web -sSINGLE_FILE=1 \
-	-sEXPORTED_FUNCTIONS=_main,_malloc,_aw_slot,_aw_push,_aw_swing,_aw_main_snap_size \
+	-sEXPORTED_FUNCTIONS=_main,_malloc,_aw_slot,_aw_push,_aw_swing,_aw_main_snap_size,_web_pause,_web_now,_aw_warp,_aw_state_size \
 	-sEXPORTED_RUNTIME_METHODS=callMain,HEAPU8,HEAP32 \
 	--shell-file web/shell.html -o "$OUT/main.html"
 

@@ -1,5 +1,6 @@
 /* audio: AudioQueue playback of past -> harm effects -> reverb, + state snapshots */
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -28,7 +29,7 @@ static harm_state		*hfx;			/* ~1.4 MB of delay lines */
 static key_tracker		key;
 static reverb_state		*rv;			/* ~200 KB of delay lines */
 static past_snap		ring[RING];
-static unsigned long	ring_n;			/* snapshots written */
+static uint64_t	ring_n;			/* snapshots written */
 #ifndef AUDIO_WORKLET
 static pthread_mutex_t	mx = PTHREAD_MUTEX_INITIALIZER;
 static AudioQueueRef	aq;
@@ -36,13 +37,16 @@ static AudioQueueRef	aq;
 static int				offline;
 static double			spin;
 static uint64_t			t0_ns;			/* wall clock of output frame 0 */
-static unsigned long	out_n, offline_now;
+static uint64_t	out_n, offline_now;
 static int				swing_samples;
 static FILE				*cap;				/* offline capture of the output */
 
 void audio_capture (FILE *f) { cap = f; }
 
 void audio_set_swing (float frac) { swing_samples = (int) lroundf (frac * 8192.0f); }
+
+/* the transport's fast forward (web): the music runs, nothing is output */
+static int		skipping;
 
 /* pending output frames of the current generator sample (time shift: 1-3) */
 static short	pend_l, pend_r;
@@ -72,6 +76,24 @@ static void reset (void)
 	key_init (&key);
 	spin = 0; out_n = 0; ring_n = 0; pend = 0;
 }
+
+/* between snapshots while fast forwarding: what the music itself takes from
+   publish (the key, which past's new notes snap to), and the block's
+   accumulators cleared, so the music goes exactly as it would have played */
+static void skip_publish (void)
+{
+	past_coefficients (&eng);
+	key_update (&key, &eng, blk_env);
+	harm_set_key (hfx, key.pc);
+	eng.key_pc = key.pc; eng.key_minor = key.minor;
+	memset (blk_env, 0, sizeof blk_env); memset (blk_click, 0, sizeof blk_click);
+	blk_chord = blk_swell = blk_choir = 0;
+	blk_n = blk_shift = 0; blk_l2 = blk_r2 = blk_uv = blk_xy = 0;
+}
+
+#ifdef AUDIO_WORKLET
+static void checkpoint (void);
+#endif
 
 static void publish (void)
 {
@@ -139,6 +161,9 @@ static void publish (void)
    one while harm's time shift is writing it again */
 static void frame (short *l, short *r)
 {
+#ifdef AUDIO_WORKLET
+	if (pend == 0 && !skipping) checkpoint ();
+#endif
 	if (pend == 0)
 	{
 		short pl, pr;
@@ -173,6 +198,7 @@ static void frame (short *l, short *r)
 	*l = pend_l; *r = pend_r;
 	if (hfx->repeat) blk_shift++;
 	pend--;
+	if (skipping) { if (++blk_n >= SNAP_FRAMES) skip_publish (); return; }
 	out_n++;
 	if (cap) { short b[2]; b[0] = *l; b[1] = *r; fwrite (b, 2, 2, cap); }
 	blk_l2 += (*l / 32768.0) * (*l / 32768.0);
@@ -182,7 +208,7 @@ static void frame (short *l, short *r)
 
 void audio_seek_offline (double seconds)
 {
-	unsigned long target = (unsigned long) (seconds * PAST_RATE);
+	uint64_t target = (uint64_t) (seconds * PAST_RATE);
 	short l, r;
 	if (!offline) { reset (); offline = 1; }
 	while (out_n < target && !eng.done) frame (&l, &r);
@@ -195,7 +221,7 @@ void audio_seek_offline (double seconds)
 float audio_get_swing (void) { return swing_samples / 8192.0f; }
 int audio_offline_now (past_snap *out, double *seconds)
 {
-	unsigned long lo, k;
+	uint64_t lo, k;
 	if (!offline) return -1;
 	if (!ring_n) return 0;
 	lo = ring_n > RING ? ring_n - RING : 0;
@@ -205,9 +231,122 @@ int audio_offline_now (past_snap *out, double *seconds)
 	return 1;
 }
 
+/* the transport. Rewinding within the last few minutes, or a short hop
+   forward, is exact: the state saved every 10 s is restored and the music
+   run on (fast, silently) to the moment -- what plays is what played. A
+   longer jump enters the piece there (past_warp: clock, ticks, scale rows
+   and mutations exact; voices, filters, harm's delays and the reverb
+   fresh). The output frame count and the snapshots carry on regardless,
+   so the picture stays in step with what is heard. */
+#define EXPORT __attribute__ ((used, visibility ("default")))
+#define CK_EVERY	(10 * PAST_RATE)		/* a checkpoint every 10 s of the music */
+#define CK_N		24						/* the last 4 minutes */
+#define AHEAD		(12 * PAST_RATE)		/* run on at most this far (exact) */
+#define MAX_SEEK	(10.0 * 365.25 * 86400.0)	/* ten years */
+typedef struct
+{
+	uint64_t		i;
+	int				ok;
+	past_state		eng;
+	harm_state		hfx;
+	reverb_state	rv;
+	key_tracker		key;
+	double			spin, blk_l2, blk_r2, blk_uv, blk_xy;
+	short			pend_l, pend_r;
+	int				pend, blk_n, blk_shift;
+	float			blk_env[PAST_OSCS], blk_click[3], blk_chord, blk_swell, blk_choir;
+} ck_t;
+static ck_t		*ck[CK_N];
+
+static void checkpoint (void)
+{
+	ck_t *c;
+	if (eng.i % CK_EVERY) return;
+	c = ck[(eng.i / CK_EVERY) % CK_N];
+	if (!c) c = ck[(eng.i / CK_EVERY) % CK_N] = (ck_t *) malloc (sizeof *c);
+	if (!c) return;
+	{
+		harm_state *hp = hfx; reverb_state *rp = rv;
+		memcpy (&c->eng, &eng, sizeof eng); memcpy (&c->hfx, hp, sizeof *hp); memcpy (&c->rv, rp, sizeof *rp);
+		memcpy (&c->key, &key, sizeof key);
+		c->spin = spin; c->blk_l2 = blk_l2; c->blk_r2 = blk_r2; c->blk_uv = blk_uv; c->blk_xy = blk_xy;
+		c->pend_l = pend_l; c->pend_r = pend_r; c->pend = pend; c->blk_n = blk_n; c->blk_shift = blk_shift;
+		memcpy (c->blk_env, blk_env, sizeof blk_env); memcpy (c->blk_click, blk_click, sizeof blk_click);
+		c->blk_chord = blk_chord; c->blk_swell = blk_swell; c->blk_choir = blk_choir;
+	}
+	c->i = eng.i; c->ok = 1;
+}
+static void ck_restore (const ck_t *c)
+{
+	memcpy (&eng, &c->eng, sizeof eng); memcpy (hfx, &c->hfx, sizeof *hfx); memcpy (rv, &c->rv, sizeof *rv);
+	memcpy (&key, &c->key, sizeof key);
+	spin = c->spin; blk_l2 = c->blk_l2; blk_r2 = c->blk_r2; blk_uv = c->blk_uv; blk_xy = c->blk_xy;
+	pend_l = c->pend_l; pend_r = c->pend_r; pend = c->pend; blk_n = c->blk_n; blk_shift = c->blk_shift;
+	memcpy (blk_env, c->blk_env, sizeof blk_env); memcpy (blk_click, c->blk_click, sizeof blk_click);
+	blk_chord = c->blk_chord; blk_swell = c->blk_swell; blk_choir = c->blk_choir;
+}
+
+/* a long jump's engine state, computed off the audio thread (the page:
+   aw_warp, a second at most for ten years) and installed in the worklet
+   (aw_install): the music enters the piece there */
+static past_state	warp_st;
+EXPORT int aw_state_size (void) { return (int) sizeof (past_state); }
+EXPORT past_state *aw_state_slot (void) { return &warp_st; }
+EXPORT past_state *aw_warp (double seconds)
+{
+	uint64_t target = seconds <= 0 ? 0 : (uint64_t) llround ((seconds > MAX_SEEK ? MAX_SEEK : seconds) * PAST_RATE);
+	past_init (&warp_st);
+	warp_st.swing = swing_samples;
+	warp_st.arc = 1; warp_st.harmony = 1; warp_st.choir = 1; warp_st.poly = 1; warp_st.endless = 1;	/* as reset () */
+	if (target) past_warp (&warp_st, target);
+	return &warp_st;
+}
+EXPORT void aw_install (void)
+{
+	uint64_t on = out_n, rn = ring_n;
+	reset ();
+	out_n = on; ring_n = rn;
+	memcpy (&eng, &warp_st, sizeof eng);
+	blk_n = (int) (eng.i % SNAP_FRAMES);
+}
+
+/* exact seeks only: returns 1 if the music is now exactly as it would have
+   played (restored and run on), 0 if the moment is out of reach that way
+   (the page then makes the long jump: aw_warp, aw_install) */
+EXPORT int aw_seek_exact (double seconds)
+{
+	uint64_t target;
+	const ck_t *best = NULL;
+	int k;
+	short l, r;
+	if (seconds < 0) seconds = 0;
+	if (seconds > MAX_SEEK) seconds = MAX_SEEK;
+	target = (uint64_t) llround (seconds * PAST_RATE);
+	if (target == 0) { uint64_t on = out_n, rn = ring_n; reset (); out_n = on; ring_n = rn; return 1; }
+	if (!(target >= eng.i && target - eng.i <= AHEAD))
+	{
+		for (k = 0; k < CK_N; k++)
+			if (ck[k] && ck[k]->ok && ck[k]->i <= target && target - ck[k]->i <= AHEAD && (!best || ck[k]->i > best->i)) best = ck[k];
+		if (!best) return 0;
+		ck_restore (best);
+	}
+	skipping = 1;
+	while (eng.i < target) frame (&l, &r);
+	skipping = 0;
+	return 1;
+}
+
+/* both kinds, here (native tests): 1 exact, 0 entered */
+EXPORT int aw_seek (double seconds)
+{
+	if (aw_seek_exact (seconds)) return 1;
+	aw_warp (seconds);
+	aw_install ();
+	return 0;
+}
+
 /* the worklet's calls: render n frames (interleaved L R floats), and read the
    snapshots published so far (ring index k, the newest RING kept) */
-#define EXPORT __attribute__ ((used, visibility ("default")))
 static float	wbuf[2 * 4096];
 EXPORT void aw_init (float swing) { audio_set_swing (swing); reset (); }
 EXPORT float *aw_render (int n)
@@ -223,8 +362,8 @@ EXPORT float *aw_render (int n)
 	}
 	return wbuf;
 }
-EXPORT unsigned long aw_snaps (void) { return ring_n; }
-EXPORT past_snap *aw_snap (unsigned long k) { return &ring[k % RING]; }
+EXPORT unsigned int aw_snaps (void) { return (unsigned int) ring_n; }
+EXPORT past_snap *aw_snap (unsigned int k) { return &ring[k % RING]; }	/* (32-bit: plain numbers to JS) */
 EXPORT int aw_snap_size (void) { return (int) sizeof (past_snap); }
 #else
 static void aq_cb (void *ud, AudioQueueRef q, AudioQueueBufferRef b)
@@ -285,7 +424,7 @@ int audio_start (int mute)
 
 int audio_now (past_snap *out, double *seconds)
 {
-	unsigned long playing, lo, hi, k;
+	uint64_t playing, lo, hi, k;
 	int found = 0;
 
 	if (offline) playing = offline_now;
@@ -294,7 +433,7 @@ int audio_now (past_snap *out, double *seconds)
 		/* audible position: wall clock since start, minus the queued buffers */
 		double t = (now_ns () - t0_ns) / 1e9;
 		long p = (long) (t * PAST_RATE) - (AQ_BUFS - 1) * AQ_FRAMES;
-		playing = p > 0 ? (unsigned long) p : 0;
+		playing = p > 0 ? (uint64_t) p : 0;
 	}
 	pthread_mutex_lock (&mx);
 	if (ring_n)

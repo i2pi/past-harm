@@ -26,7 +26,7 @@ typedef struct
 	harm_cbuf	cbuf[HARM_CHANS];
 	unsigned int chan[HARM_CHANS];
 	char		nofx[HARM_CHANS], nofxfeed[HARM_CHANS], chanon[HARM_CHANS];
-	unsigned long i, k, l, c, q, z;
+	uint64_t i, k, l, c, q, z;
 
 	/* (added) what the visuals read */
 	float		gback_raw[HARM_CHANS][HARM_TAPS];	/* gains before the stability scaling */
@@ -48,7 +48,7 @@ typedef struct
 	char		clear_pend[HARM_CHANS];				/* clear once the echoes have faded out */
 
 	/* (added) harm's drums, re-timed to past's bar -- set by the caller */
-	unsigned long t;								/* past's sample index */
+	uint64_t t;								/* past's sample index */
 	float		arc;								/* past's arc of voices, 0..1 */
 	int			key_pc;
 	/* (added) the rhythm genes (past_state.gene): the left and right delay
