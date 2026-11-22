@@ -27,7 +27,6 @@ body.playing.idle #canvas { cursor: none; }
   #start .go { top: 4.5vmin; bottom: auto; left: 4.5vmin; right: calc(9vmin + max(22px, 3.2vmin)); }
 }
 #start.busy .go { opacity: 0.35; }
-#start .go .fs { font-size: 0.86em; opacity: 0.7; }
 #gh { position: fixed; top: 4.5vmin; right: 4.5vmin; width: 3.2vmin; height: 3.2vmin; min-width: 22px; min-height: 22px; color: #f2efe7;
   opacity: 0.7; transition: opacity 0.4s; z-index: 2; }
 #gh:hover { opacity: 1; }
@@ -200,9 +199,8 @@ const canvas = document.getElementById('canvas');
 const mobile = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
 /* desktop: uncapped, every CSS pixel like the macOS window's points; phones: 720p */
 const MAX_PX = +params.get('px') || (mobile ? 1280 * 720 : Infinity);
-const iphone = /iPhone|iPod/.test(navigator.userAgent), standalone = navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
-if (mobile) document.querySelector('#start .go').innerHTML = 'tap to begin &nbsp;·&nbsp; sound on' +
-  (iphone && !standalone ? '<br><span class="fs">full screen: Share \u2192 Add to Home Screen</span>' : '');
+const standalone = navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+if (mobile) document.querySelector('#start .go').innerHTML = 'tap to begin &nbsp;·&nbsp; sound on';
 function fitCanvas() {
   /* 16:9 landscape whatever the window's shape or orientation: the largest
      that fits, centred, with black bars */
