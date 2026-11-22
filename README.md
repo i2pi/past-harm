@@ -62,9 +62,11 @@ profile (see the script's header).
 
 ## Docs
 
-    make tools/musiclog && python3 tools/mkdocs.py
+    python3 -m venv .venv && .venv/bin/pip install verovio     # once
+    make tools/musiclog && .venv/bin/python tools/mkdocs.py
 
 Regenerates `docs/` from the source: the code excerpts are copied from the
-files, the scores are transcribed from what the engine plays, and the figures
-are rendered with headless Google Chrome (set `CHROME` to its path if it is
-elsewhere).
+files; the scores are transcribed from what the engine plays, analysed
+(`tools/harmony.py`) and engraved with Verovio (`tools/engrave.py`); the other
+figures are rendered with headless Google Chrome (set `CHROME` to its path if
+it is elsewhere).

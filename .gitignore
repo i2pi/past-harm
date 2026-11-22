@@ -12,3 +12,5 @@ renders/
 .DS_Store
 *.swp
 tools/musiclog
+.venv/
+__pycache__/

@@ -9,7 +9,8 @@ JavaScript. This script renders each page in headless Chrome, saves every
 finished figure as a standalone SVG, and converts the page to Markdown that
 GitHub displays (inline <sub>/<sup>/<i> are kept: GitHub allows them).
 
-    make tools/musiclog && python3 tools/mkdocs.py
+    python3 -m venv .venv && .venv/bin/pip install verovio     (once)
+    make tools/musiclog && .venv/bin/python tools/mkdocs.py
 """
 import html, os, re, subprocess, sys, tempfile
 from html.parser import HTMLParser
@@ -125,6 +126,12 @@ class MD:
             pre = next(find(n, lambda x: x.tag == 'pre'))
             src = text_of(cap).strip() if cap else ''
             return f'`{src}`\n\n```c\n{text_of(pre).rstrip()}\n```'
+        im = next(find(n, lambda x: x.tag == 'img'), None)
+        if im is not None:                           # an engraved score, already a file in docs/figures
+            src = im.attrs.get('src', '')
+            src = src[len('docs/'):] if src.startswith('docs/') else src
+            captxt = self.inline(cap).strip() if cap else ''
+            return f'![{im.attrs.get("alt", "")}]({src})' + (f'\n\n<sub>{captxt}</sub>' if captxt else '')
         svg = next(find(n, lambda x: x.tag == 'svg'), None)
         if svg is None: return ''
         self.nfig += 1

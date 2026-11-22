@@ -60,11 +60,12 @@ svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif;
   <a href="#reading">0 · Reading these scores</a>
   <a href="#melody">1 · Melody: a row that permutes</a>
   <a href="#harmony">2 · Harmony: keys, masks and snapping</a>
-  <a href="#rhythm">3 · Rhythm: coprime streams</a>
-  <a href="#mutation">4 · Rhythm that mutates</a>
-  <a href="#timbre">5 · Timbre</a>
-  <a href="#effects">6 · Effects as instruments</a>
-  <a href="#form">7 · Form</a>
+  <a href="#analysis">3 · Functional analysis</a>
+  <a href="#rhythm">4 · Rhythm: coprime streams</a>
+  <a href="#mutation">5 · Rhythm that mutates</a>
+  <a href="#timbre">6 · Timbre</a>
+  <a href="#effects">7 · Effects as instruments</a>
+  <a href="#form">8 · Form</a>
 </nav>
 
 <!-- ============================================================ -->
@@ -76,17 +77,16 @@ marked above each system.</p>
 advances its phase in radians without the 2π. That is a C♯3 about <em>18 cents sharp</em>, and the whole piece is
 in equal temperament at that offset. Every note below is written at the nearest equal-tempered pitch: read
 "C♯" as C♯ +18 cents.</p>
-<p><b>Notation.</b> The scores are in <em>time-space notation</em>: a note's horizontal position is proportional to
-when it starts, and a line from the notehead shows how long it actually sounds (its envelope, including the
-release). There are no key signatures; an accidental holds to the end of its bar, as usual. Dynamics are shown as
-opacity.</p>
-<div class="key">
-  <span style="--c:var(--ink)">past's melody (three voices on one pitch)</span>
-  <span style="--c:var(--sky)">past's low figures</span>
-  <span style="--c:var(--teal)">choir (past's long notes, sung)</span>
-  <span style="--c:var(--orange)">solo choir voice</span>
-  <span style="--c:var(--rose)">a note the harmony moved</span>
-</div>
+<p><b>Notation.</b> The scores are engraved from a log of what the engine played. There are three staves:
+past's <em>melody</em>, the <em>choir</em> (past's long notes, sung; in the opening also the solo voice), and past's
+<em>low figures</em>. The choir sings on the bar's three beats, so it is written in half-note triplets, tied while a
+note is still sounding. Roman numerals under the bass give the harmony at each choir beat, in the key the piece is in
+at that moment (see <a href="#analysis">section 3</a>). Key signatures follow the key at the start of each excerpt.</p>
+<p><b>Quantisation.</b> The notation is a little tidier than the sound, in three ways. The melody's three voices are
+written as one: voices B and C, which sound 23–46 ms after the sixteenth (section 1), are merged with voice A. The low
+figures start on past's tick rather than the grid (section 4), so they are moved to the nearest sixteenth. A choir note
+is written on every beat on which it still sounds above a quarter of its level. The melody's octave jumps are real: the
+same pitch class sounds in different octaves depending on which of past's voice slots plays it.</p>
 
 <!-- ============================================================ -->
 <h2 id="melody"><span class="n">1</span>Melody: a row that permutes</h2>
@@ -99,7 +99,7 @@ every 17 ticks two neighbouring notes of the main row swap; every 19 ticks a not
 23 ticks the second and third rows trade a note, transposed by <code>12 − row[j] mod 6</code>. 17, 19 and 23 are
 primes, so the three processes only line up again after 7,429 ticks. The row keeps its notes but changes its order,
 and the melody wanders through permutations of the same small set of pitches.</p>
-<figure class="score"><svg id="sc-rows"></svg>
+<figure class="score"><img src="docs/figures/music-score-rows.svg" alt="past's main row at six moments">
 <figcaption>The main row (written as the melody plays it, an octave up) at six moments in the first eight minutes, taken from the engine's log. The pitches stay the same while their order drifts.</figcaption></figure>
 
 <h3>Three voices on one pitch</h3>
@@ -118,8 +118,8 @@ groups of three sixteenths (3+3+3+3+4): notes off those accents are halved in le
 <p>The first eight bars. The <em>mood</em> starts dark: past's melody is dropped an octave, the harmony is held
 to C♯ Phrygian, and a single choir voice sings a slow lament around the root, one note every two bars
 (root, ♭2, root, ♭7 below, root, ♭2, ♭6 below, root).</p>
-<figure class="score"><svg id="sc-opening"></svg>
-<figcaption>Bars 1–8 (0:00–0:24), as the engine played them. The orange notes are the solo lament; each lasts about 5½ s, swelling for ~1.4 s.</figcaption></figure>
+<figure class="score"><img src="docs/figures/music-score-opening.svg" alt="The opening, bars 1 to 8">
+<figcaption>Bars 1–8 (0:00–0:24), as the engine played them, in C♯ Phrygian. The choir staff carries the solo lament, one note every two bars, each lasting about 5½ s. The harmony alternates between the tonic (an open fifth, I5, and i) and the Phrygian ♭II (D major 7), the mode’s characteristic tension.</figcaption></figure>
 
 <!-- ============================================================ -->
 <h2 id="harmony"><span class="n">2</span>Harmony: keys, masks and snapping</h2>
@@ -134,25 +134,73 @@ settles mostly on C♯ minor and E major, with excursions to D minor, F minor, D
 <h3>Masks</h3>
 <p>Each new note moves to the nearest pitch of a <em>mask</em> on the key, rounding ties down. Which mask depends on
 how full the music is:</p>
-<figure class="score"><svg id="sc-masks"></svg>
+<figure class="score"><img src="docs/figures/music-score-masks.svg" alt="The scale masks on C sharp">
 <figcaption>The masks, on C♯. With fewer than four voices sounding: the full major or natural minor scale. With four or more: only the pentatonic, which has no semitone or tritone between any two notes, so a dense chord cannot clash. During the dark opening: Phrygian, then the Japanese <i>in</i> scale (root, ♭2, 4, 5, ♭6).</figcaption></figure>
 <h3>What past wrote, and what you hear</h3>
 <p>The same two bars, from a run with the harmony switched off (top) and on (bottom). The timing is identical; only the
 pitches move. Across the first eight minutes the harmony moves <span id="n-changed"></span> of
 <span id="n-total"></span> notes. Nine in ten move by a semitone, usually down; the rest by a whole tone down.</p>
-<figure class="score"><svg id="sc-raw"></svg>
-<figcaption>Bars 70–71 (3:25–3:31), key E major, many voices sounding, so the pentatonic mask is on. Top: past's own pitches. Bottom: as heard; the moved notes are in rose.</figcaption></figure>
+<figure class="score"><img src="docs/figures/music-score-raw.svg" alt="Bars 70 and 71 as past wrote them">
+<figcaption>Bars 70–71 (3:25–3:31) as past wrote them (harmony off), with their analysis.</figcaption></figure>
+<figure class="score"><img src="docs/figures/music-score-heard.svg" alt="Bars 70 and 71 as heard">
+<figcaption>The same bars as heard. Key E major; many voices are sounding, so the pentatonic mask is on. Compare the chords: the snapping removes the 4th and 7th degrees, and some thirds with them.</figcaption></figure>
 <h3>The bass pairs and the choir</h3>
 <p>past's bass moves in <em>pairs</em>: row[<i>n</i>] and row[<i>n</i>+2] together, two octaves below the melody, on a
 16-tick cycle at ticks 3, 7, 9 and 12. That gives the uneven rhythm 4 + 2 + 3 + 7. Each note has a six-second
 release, so pairs overlap into chords. From the first minute these long notes are given to a choir. They don't
 sound at once: each waits for the next beat of the bar's <em>three</em>, so the choir's chords land in half-note
 triplets against past's sixteenths.</p>
-<figure class="score"><svg id="sc-entrance"></svg>
-<figcaption>Bars 21–28 (0:59–1:22): the choir enters. Its chords (teal) arrive on the bar's three beats; past's melody and low figures carry on beneath.</figcaption></figure>
+<figure class="score"><img src="docs/figures/music-score-entrance.svg" alt="The choir enters, bars 21 to 28">
+<figcaption>Bars 21–28 (0:59–1:22): the choir enters on the bar’s three beats while past’s melody carries on in sixteenths. The mood is still dark (C♯ Phrygian). Note the Phrygian ♭II (D major 7) moving to i, and the pentatonic sus2 chords as more voices sound.</figcaption></figure>
 
 <!-- ============================================================ -->
-<h2 id="rhythm"><span class="n">3</span>Rhythm: coprime streams</h2>
+<h2 id="analysis"><span class="n">3</span>Functional analysis</h2>
+<p><b>Method.</b> The harmonic rhythm is the choir's: three beats per bar. On each beat every sounding note is weighted
+by its envelope (its held level, then its release), the pitch classes are summed, and the best-fitting chord is
+chosen from triads, sevenths, suspended chords and open fifths. The chord is read in the key the piece is in at that
+moment (Phrygian while the opening's mood is dark), as a Roman numeral and a function: <em>T</em> tonic,
+<em>S</em> predominant, <em>D</em> dominant, or a modal colour that is none of these. In Phrygian the ♭II is counted as
+the dominant: it is the mode's leading chord and resolves down a semitone to i. The figures cover the first eight
+minutes: {{beats}} beats, {{chords}} with a clear chord.</p>
+<table>
+<tr><th>function</th><th>share of beats</th></tr>
+<tr><td>tonic (T)</td><td>{{pT}}</td></tr>
+<tr><td>predominant (S)</td><td>{{pS}}</td></tr>
+<tr><td>dominant (D)</td><td>{{pD}}</td></tr>
+<tr><td>modal colour</td><td>{{pM}}</td></tr>
+</table>
+<h3>Sonority: open, not tertian</h3>
+<p>Nearly half the beats ({{p5}}) are <em>open fifths</em>, root and fifth with no third; {{psus}} are suspended
+(sus2 or sus4); only {{ptert}} are triads or seventh chords, {{p7}} of them sevenths. The snapping is what opens the
+sound: in a run with it switched off, {{raw_tert}} of beats are tertian and {{raw_p5}} are open fifths. With four or more
+voices sounding the mask is pentatonic, which has no 4th or 7th degree, so a third that would make a semitone or a
+tritone against another voice is moved onto the root or the fifth. Dense passages become fields of fifths and
+seconds: quartal and pentatonic sonorities rather than functional triads.</p>
+<p>The choir's chords grow from past's <em>bass pairs</em>, row[<i>n</i>] and row[<i>n</i>+2] together. Of the
+{{npairs}} pairs in the first eight minutes the intervals are: {{pairs}}. With six-second releases, successive pairs
+overlap into four- and five-note chords.</p>
+<h3>Syntax: pendular, not cadential</h3>
+<p>Of {{moves}} changes of function, the harmony moves T→D {{TD}} times and D→T {{DT}}, T→S {{TS}} and S→T {{ST}},
+but S→D {{SDw}} (and D→S {{DSw}}). The basic phrase of tonal music, predominant to dominant to tonic, barely
+occurs. Instead the harmony is <em>pendular</em>: it steps away from the tonic to one side, returns, then steps to the
+other. That is the motion of modal and drone-based music, not of the classical cadence. The most frequent progressions
+are {{top_prog}}.</p>
+<p>The dominants are also weak. In the major and minor stretches the leading tone sounds on {{lt}} of the beats and the
+subtonic on {{st}}: the 7th degree appears only in passing in past's rows, and the pentatonic mask removes it in dense passages. So
+V is usually an open fifth with no leading tone to pull it home. The authentic motion V → I does happen ({{VI}}), but
+always as bare fifths. The most directed resolution is modal: in the opening the Phrygian ♭II falls a semitone onto the
+tonic ({{bIIi}}).</p>
+<p>Two more things hold the harmony still. The melody is a repeated-note pulse whose pitch changes only when the bass
+moves, so it works as an <em>inverted pedal</em> over the chords. And the chords follow from past's row permutations,
+not from voice-leading: a chord changes because the row was shuffled, not because a dissonance needs resolving.</p>
+<figure class="score"><img src="docs/figures/music-score-reduction.svg" alt="Harmonic reduction, bars 61 to 84">
+<figcaption>A harmonic reduction of bars 61–84 (2:58–4:07), around the first peak: one chord per choir beat, the bass as
+the lowest sounding note, the chord voiced in close position. Under each beat: the function and, where it changes,
+the numeral; a key name marks each modulation, and numerals are in the local key. The music circles its tonic (E major,
+then C♯ minor, its relative): predominants and dominants come and go, with few cadences.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="rhythm"><span class="n">4</span>Rhythm: coprime streams</h2>
 <p>Every rhythm in the piece divides the same bar. Two pulses that divide a bar into <i>a</i> and <i>b</i> beats meet
 every 1/gcd(<i>a</i>,<i>b</i>) of the bar. If <i>a</i> and <i>b</i> are <em>coprime</em> (no common factor) they
 meet only on the downbeat. Every other onset of one falls somewhere new against the other, and the ear hears two
@@ -186,7 +234,7 @@ minute and each eight-minute section an internal shape:</p>
 <figcaption>Which of past's figures play when, over one eight-minute section (the pattern repeats in the endless version).</figcaption></figure>
 
 <!-- ============================================================ -->
-<h2 id="mutation"><span class="n">4</span>Rhythm that mutates</h2>
+<h2 id="mutation"><span class="n">5</span>Rhythm that mutates</h2>
 <p>In the endless version the divisions are not fixed. About every seven minutes (randomly six to eight), on a
 downbeat, one of them changes to a new value that is still coprime with the others. Possible values:</p>
 <table>
@@ -204,7 +252,7 @@ echoes bend in pitch by up to 17 cents on the way.</p>
 <figcaption>The first two mutations of the first hour: at 6:59 the right echoes go from 7 to 13 per bar; at 14:33 past's accents go from groups of 3 to 7 + 9.</figcaption></figure>
 
 <!-- ============================================================ -->
-<h2 id="timbre"><span class="n">5</span>Timbre</h2>
+<h2 id="timbre"><span class="n">6</span>Timbre</h2>
 <h3>past's voices</h3>
 <p>A past voice is not a single tone. Its odd partials run at a quarter of the note's frequency and its even partials
 at whole multiples, so every voice is a <em>harmonic series built two octaves below the written note</em>. It contains
@@ -214,8 +262,8 @@ which of the sixteen voice slots it is in (2 to 8), and they are weighted linear
 <p>The odd partials also pass through an arctangent waveshaper whose drive is itself a slow sine (about 45 s). At low
 drive they are soft sines; at full drive the shaper squares them off and fills them with more odd harmonics. Every
 voice slowly breathes between pure and buzzy.</p>
-<figure class="score"><svg id="sc-spectrum"></svg>
-<figcaption>The spectrum of one past voice (slot 6, eight partials) playing C♯4. Teal: the waveshaped odd harmonics (1, 3, 5, 7 of a fundamental two octaves down). Ink: the plain even partials. Numbers are the harmonic number and its deviation in cents from the piece's equal temperament; ring size is the weight.</figcaption></figure>
+<figure class="score"><img src="docs/figures/music-score-spectrum.svg" alt="The partials of one past voice">
+<figcaption>The partials of one past voice (slot 6, eight partials) playing C♯4, low to high: harmonics 1, 3, 5 and 7 of a fundamental two octaves down (waveshaped), then 8, 16 and 24, the written note and its octaves. Under each: the harmonic number and its deviation in cents from the piece’s equal temperament. Their weights fall linearly from the lowest.</figcaption></figure>
 <h3>The choir</h3>
 <p>The choir is built the way a real choir sounds: many voices, each slightly off pitch. Each harmonic of a
 sawtooth-like spectrum is spread into a band about 45 cents wide (wider for higher harmonics) with every frequency in
@@ -232,11 +280,11 @@ nine minutes, from a thin, dark sine to a driven, harmonically full bass.</p>
 <p>Every drum takes its pitch from the current key, so the percussion is part of the harmony. The bell moves through
 chord tones (third, fifth, octave, fifth, root), rotating with the four-bar phrase, and holds to the third and fifth
 until the piece is near its fullest.</p>
-<figure class="score"><svg id="sc-drumpitch"></svg>
+<figure class="score"><img src="docs/figures/music-score-drumpitch.svg" alt="The drums' pitches in C sharp minor">
 <figcaption>The pitched drums in C♯ minor (the deep thump is written an octave up). The high tick (the 9th, around 2.4–4.8 kHz) is off the staff.</figcaption></figure>
 
 <!-- ============================================================ -->
-<h2 id="effects"><span class="n">6</span>Effects as instruments</h2>
+<h2 id="effects"><span class="n">7</span>Effects as instruments</h2>
 <h3>Echoes that play rhythms</h3>
 <p>harm's delay networks (2003) are kept, but their delay times are set to fractions of the bar. A note played on
 the downbeat comes back as a rhythm: fifths of the bar on the left, sevenths on the right. The echoes feed back into
@@ -253,7 +301,7 @@ rests are never empty.</p>
 three minutes as the mood lifts.</p>
 
 <!-- ============================================================ -->
-<h2 id="form"><span class="n">7</span>Form</h2>
+<h2 id="form"><span class="n">8</span>Form</h2>
 <p>Several slow cycles shape the piece, none of them in step with the others:</p>
 <table>
 <tr><th>cycle</th><th>period</th><th>what it shapes</th></tr>
@@ -406,36 +454,6 @@ const DATA = /*DATA*/null;
   const D = DATA;
   $('n-changed').textContent = D.changed.toLocaleString(); $('n-total').textContent = D.total.toLocaleString();
 
-  /* rows */
-  even('sc-rows', D.rows.map(r => ({ label: mmss(r.t), notes: r.s0.map(v => ({ m: 49 + 12 + v })) })), false, { extra: 20 });
-
-  /* opening, entrance */
-  score('sc-opening', D.opening, { title: 'the opening' });
-  score('sc-entrance', D.entrance, { title: 'the choir enters' });
-
-  /* raw vs heard */
-  (function () {
-    const raw = D.full_raw, heard = JSON.parse(JSON.stringify(D.full));
-    heard.notes.forEach((n, i) => { const r = raw.notes[i]; if (r && r.x === n.x && r.note !== n.note) n.changed = true; });
-    const s = $('sc-raw');
-    // draw two 2-bar systems by reusing score() into separate groups
-    const tmp1 = document.createElementNS(NS, 'svg'), tmp2 = document.createElementNS(NS, 'svg');
-    tmp1.id = 'tmp-raw'; tmp2.id = 'tmp-heard'; document.body.appendChild(tmp1); document.body.appendChild(tmp2);
-    score('tmp-raw', raw, { perSystem: 2, title: 'past as written (harmony off)' });
-    score('tmp-heard', heard, { perSystem: 2, title: 'as heard (snapped)' });
-    const g1 = el(s, 'g', {}), g2 = el(s, 'g', { transform: 'translate(0 300)' });
-    while (tmp1.firstChild) g1.appendChild(tmp1.firstChild);
-    while (tmp2.firstChild) g2.appendChild(tmp2.firstChild);
-    tmp1.remove(); tmp2.remove();
-    s.setAttribute('viewBox', `0 0 ${W} 600`);
-  })();
-
-  /* masks on C# */
-  (function () {
-    const masks = [['major', [0, 2, 4, 5, 7, 9, 11]], ['minor', [0, 2, 3, 5, 7, 8, 10]], ['major pent.', [0, 2, 4, 7, 9]], ['minor pent.', [0, 3, 5, 7, 10]], ['Phrygian', [0, 1, 3, 5, 7, 8, 10]], ['in', [0, 1, 5, 7, 8]]];
-    even('sc-masks', masks.map(([nm, iv], i) => ({ label: nm, notes: iv.map(v => ({ m: 61 + v, col: i >= 4 ? C('rose') : i >= 2 ? C('teal') : C('ink') })) })), false, { extra: 16 });
-  })();
-
   /* drums: from the log, plus harm's thump / blip / tick from their rules */
   (function () {
     const ex = D.drums, s = $('sc-drums'), nb = ex.bars, rows = [];
@@ -506,32 +524,6 @@ const DATA = /*DATA*/null;
     text(s, 130, y + 26, '14:33 · past\'s accents 3+3+3+3+4 → 7+9', { fill: C('ink'), 'font-size': 12 });
     y = rhythm(s, [{ name: 'accents, before', col: C('green'), hits: groups(3) }, { name: 'accents, after', col: C('rose'), hits: groups(7) }, { name: 'choir (3)', col: C('orange'), hits: onsets(3) }], 2, y + 50);
     s.setAttribute('viewBox', `0 0 ${W} ${y + 8}`);
-  })();
-
-  /* spectrum of a voice */
-  (function () {
-    // slot 6: N = 8 partials, k = 0..7; written note C#4 = past note 12 (f = 280.1 Hz), j even so m = 1
-    const f = 280.11, N = 8, sum = N * (N - 1) / 2, notes = [];
-    for (let k = 1; k < N; k++) {
-      const freq = k % 2 ? k * f / 4 : k * f, harm = k % 2 ? k : 4 * k, w = (N - k) / sum;
-      const mid = 69 + 12 * Math.log2(freq / 440) - 0.18, m = Math.round(mid);   // against the piece's own tuning (+18 c)
-      notes.push({ freq, m, cents: Math.round(100 * (mid - m)), harm, w, odd: k % 2 });
-    }
-    notes.sort((a, b) => a.freq - b.freq);
-    even('sc-spectrum', [{ label: 'partials (low → high)', notes: notes.map(n => ({ m: n.m, col: n.odd ? C('teal') : C('ink'), r: 4 + 26 * n.w, txt: 'h' + n.harm, txt2: (n.cents > 0 ? '+' : '') + n.cents + '¢' })) }], false, { extra: 50 });
-  })();
-
-  /* drum pitches in C# minor (key 0) */
-  (function () {
-    const R = 280.1, fold = (f, lo) => { while (f >= 2 * lo) f /= 2; while (f < lo) f *= 2; return f; }, M = f => Math.round(69 + 12 * Math.log2(f / 440));
-    const st = n => Math.pow(2, n / 12);
-    const g = [
-      { label: 'thump (root, 8va)', notes: [{ m: M(fold(R, 55)) + 12, col: C('ink') }] },
-      { label: 'log drum (5th)', notes: [{ m: M(fold(R * st(7), 150)), col: C('orange') }] },
-      { label: 'rim (root / 5th)', notes: [{ m: M(fold(R, 700)), col: C('green') }, { m: M(fold(R * st(7), 700)), col: C('green') }] },
-      { label: 'bell (3rd, 5th, 8ve, root)', notes: [3, 7, 12, 0].map(v => ({ m: M(fold(R * st(v), 450)), col: C('sky') })) },
-      { label: 'harm tick (5th)', notes: [{ m: M(fold(R * st(7), 700)), col: C('rose') }] }];
-    even('sc-drumpitch', g, false, { extra: 16 });
   })();
 
   /* echoes */
