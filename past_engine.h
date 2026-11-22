@@ -118,9 +118,6 @@ void	past_init (past_state *s);
 void	past_prepare_choir (void);
 /* advance one sample; returns 0 once the piece has ended (8:00) */
 int		past_next (past_state *s, short *left, short *right);
-/* (added) enter the piece at sample `target` (after past_init): the clock,
-   ticks, scale rows and mutations exact; voices and filters fresh */
-void	past_warp (past_state *s, uint64_t target);
 /* (added) fill the fb_* / drive_* fields from the current sample position */
 void	past_coefficients (past_state *s);
 

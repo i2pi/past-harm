@@ -61,13 +61,7 @@ Writes `build/web/past-harm.html`, one self-contained page (~420 KB) that runs
 from a file or any web server: click to start, `f` or double-click for full
 screen. The music runs in an AudioWorklet (audio.c built with
 `-DAUDIO_WORKLET`), the picture is main.c on WebGL2 through `web/gl_compat.c`.
-Move the pointer (or touch) for the transport: play / pause (space), and a
-shuttle -- drag the head right to go forward, left to go back, from 2 s near the
-centre to 10 years at the end, exponentially; arrows step 10 s (shift: 1 min).
-Rewinding within the last 4 minutes, or hopping a few seconds ahead, is exact
-(a checkpoint restored and the music run on); longer jumps enter the piece at
-the moment (`past_warp`: clock, ticks, scale rows and mutations exact; voices
-and effects fresh).
+Move the pointer (or touch) for play / pause (space).
 
 The canvas is the window's size in CSS pixels, as the macOS app renders in points
 (capped at 1280×720 on phones); `?px=2073600` caps it at that many pixels.
