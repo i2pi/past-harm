@@ -2,7 +2,6 @@
 *.o
 p10m1-past
 tools/render
-tools/glasslab
 build/
 # renders and test frames
 renders/

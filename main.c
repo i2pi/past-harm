@@ -1,7 +1,7 @@
 /* p10m1-past
  *
  * The p10m1 scene (Mar 2012) driven by the generative music of past
- * (Dec 2003). The music runs unmodified (past_engine.c); the scene reads its
+ * (before 2003). The music runs unmodified (past_engine.c); the scene reads its
  * internal state -- voices, scales, tick, feedback-filter coefficients -- for
  * what is audible right now, and uses it in place of p10m1's clock:
  *
@@ -21,6 +21,10 @@
  *   ./p10m1-past [-f] [-mute] [-loop] [-shot out.ppm -at seconds]
  *   keys: f fullscreen, Esc quit
  */
+#ifdef __EMSCRIPTEN__
+#include "web/gl_compat.h"				/* the browser: WebGL2 (see web/) */
+#include <emscripten/html5.h>
+#else
 #include <GLUT/glut.h>
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -28,6 +32,7 @@
 #include <OpenGL/OpenGL.h>
 #include <objc/runtime.h>
 #include <objc/message.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +51,7 @@ static int		W = 1280, H = 720;
 static int		fullscreen, mute, loop_play;
 static const char *shot_path;
 static const char *video_path;			/* -video out.mp4: render offline (see video_render) */
+static int		offline_frames;				/* the browser's ?at=: stepped like the video, for comparing */
 static float	vfps = 30;
 static int		video_w = 4096, video_h = 2304;
 static double	vsecs = 480;
@@ -1546,7 +1552,7 @@ static void scene (void)
 	last_wall = wall;
 	fps = fps * 0.95f + 0.05f / (dt > 1e-4f ? dt : 1e-4f);
 
-	if (video_path)
+	if (video_path || offline_frames)
 	{
 		/* offline video: the music run to this frame's moment */
 		dt = 1.0f / vfps;
@@ -1654,7 +1660,7 @@ static void scene (void)
 	else { pass (prv, pr_feedback); tex ("tp", nxt->tex); tex ("tc", D->tex); uni ("im", (float) (int) (V.decay * 256)); draw (); }
 
 	/* harm: convolution of frames (on the shown image) */
-	echo_pass (A, D, video_path ? vfps : shot_path ? 30.0f : (fps > 5 ? fps : 30.0f));
+	echo_pass (A, D, video_path || offline_frames ? vfps : shot_path ? 30.0f : (fps > 5 ? fps : 30.0f));
 
 	if (video_path)
 	{
@@ -1687,6 +1693,7 @@ static void scene (void)
    the music (so picture and sound are one computation), muxed at the end. */
 static void put32 (unsigned char *p, unsigned int v) { p[0] = v; p[1] = v >> 8; p[2] = v >> 16; p[3] = v >> 24; }
 
+#ifndef __EMSCRIPTEN__
 static int video_render (void)
 {
 	CGLPixelFormatAttribute at[] = { kCGLPFAAccelerated, kCGLPFAColorSize, 24, kCGLPFAAlphaSize, 8, 0 };
@@ -1794,6 +1801,81 @@ static void key (unsigned char k, int x, int y)
 	}
 }
 
+#else
+/* the browser: the page sizes the canvas (its CSS size, as the macOS window
+   renders in points; capped); the frame follows it. The picture is a
+   per-frame process (blur, feedback, echoes), made at 60 fps: on faster
+   displays (120 Hz) every other refresh is skipped. */
+static void web_frame (void)
+{
+	static double next, prev, period = 1000.0 / 60.0;
+	double now = emscripten_get_now ();
+	int w = 0, h = 0;
+	if (offline_frames)
+	{
+		/* ?at=s: step exactly as the macOS video renderer does (1/vfps, the
+		   music run offline to each frame), then hold that frame */
+		emscripten_get_canvas_element_size ("#canvas", &w, &h);
+		W = w > 16 ? w : 16; H = h > 16 ? h : 16;
+		if (frames < offline_frames) scene ();
+		else { copy_pass (NULL, pool[3].tex); glUseProgram (0); EM_ASM ({ document.title = 'frame ready'; }); }	/* A: the last frame */
+		return;
+	}
+	if (prev > 0 && now - prev < 100.0) period += 0.1 * (now - prev - period);	/* the display's refresh */
+	prev = now;
+	if (now < next - 0.5 * period) return;				/* due at the nearest refresh */
+	next = (next > 0 && now - next < 50.0 ? next : now) + 1000.0 / 60.0;
+	{
+		static int nf; static double t0;					/* (?fps: log the rate drawn) */
+		if (!t0) t0 = now;
+		if (++nf % 120 == 0 && EM_ASM_INT ({ return new URLSearchParams (location.search).has ('fps'); }))
+			emscripten_log (EM_LOG_CONSOLE, "drawn %.1f fps (refresh %.1f Hz)", nf * 1000.0 / (now - t0), 1000.0 / period);
+	}
+	emscripten_get_canvas_element_size ("#canvas", &w, &h);
+	W = w > 16 ? w : 16; H = h > 16 ? h : 16;
+	scene ();
+}
+
+static int web_start (void)
+{
+	EmscriptenWebGLContextAttributes a;
+	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
+	emscripten_webgl_init_context_attributes (&a);
+	a.majorVersion = 2; a.minorVersion = 0;
+	a.alpha = 0; a.depth = 1; a.antialias = 0; a.premultipliedAlpha = 0;
+	a.powerPreference = EM_WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
+	ctx = emscripten_webgl_create_context ("#canvas", &a);
+	if (ctx <= 0) { fprintf (stderr, "no WebGL2\n"); return 1; }
+	emscripten_webgl_make_context_current (ctx);
+	/* the macOS app's OpenGL output is not colour matched: its values go
+	   to the display as they are (P3 on recent Macs). Tag the canvas the
+	   same, where the display is P3 (?srgb for the browser default). */
+	EM_ASM ({
+		var g = GL.currentContext && GL.currentContext.GLctx;
+		if (g && 'drawingBufferColorSpace' in g && matchMedia ('(color-gamut: p3)').matches && !new URLSearchParams (location.search).has ('srgb'))
+			g.drawingBufferColorSpace = 'display-p3';
+	});
+	/* rendering to the float targets (the glass normals, the title) */
+	if (!emscripten_webgl_enable_extension (ctx, "EXT_color_buffer_float"))
+		fprintf (stderr, "no EXT_color_buffer_float\n");
+	emscripten_webgl_enable_extension (ctx, "OES_texture_float_linear");
+	gc_init ();
+	glClearDepth (1.0);
+	glDepthFunc (GL_LESS);
+	glEnable (GL_DEPTH_TEST);
+	glEnable (GL_BLEND);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	audio_set_swing (swing);
+	{
+		double at = EM_ASM_DOUBLE ({ return +(new URLSearchParams (location.search).get ('at') || 0); });
+		double fr = EM_ASM_DOUBLE ({ return +(new URLSearchParams (location.search).get ('vfps') || 60); });
+		if (at > 0) { vfps = (float) fr; offline_frames = (int) lround (at * vfps) + 1; }
+	}
+	emscripten_set_main_loop (web_frame, 0, 0);
+	return 0;
+}
+#endif
+
 int main (int argc, char **argv)
 {
 	int i, j;
@@ -1820,7 +1902,9 @@ int main (int argc, char **argv)
 		else if (!strcmp (argv[i], "-shot") && i + 1 < argc) shot_path = argv[++i];
 		else if (!strcmp (argv[i], "-at") && i + 1 < argc) shot_at = atof (argv[++i]);
 		else if (!strcmp (argv[i], "-swing") && i + 1 < argc) swing = (float) atof (argv[++i]);
+#ifndef __EMSCRIPTEN__
 		else if (!strcmp (argv[i], "-retina")) retina = 1;
+#endif
 		else if (!strcmp (argv[i], "-video") && i + 1 < argc) video_path = argv[++i];
 		else if (!strcmp (argv[i], "-vsize") && i + 1 < argc) { const char *x; video_w = atoi (argv[++i]); x = strchr (argv[i], 'x'); if (x) video_h = atoi (x + 1); }
 		else if (!strcmp (argv[i], "-vsecs") && i + 1 < argc) vsecs = atof (argv[++i]);
@@ -1869,6 +1953,9 @@ int main (int argc, char **argv)
 	V.last_tick = -1;
 	for (i = 0; i < PAST_OSCS; i++) V.vq[i][0] = 1;
 
+#ifdef __EMSCRIPTEN__
+	return web_start ();
+#else
 	if (video_path) { W = video_w; H = video_h; return video_render (); }
 
 	glutInit (&argc, argv);
@@ -1896,4 +1983,5 @@ int main (int argc, char **argv)
 	if (!shot_path) audio_start (mute, loop_play);
 	glutMainLoop ();
 	return 0;
+#endif
 }

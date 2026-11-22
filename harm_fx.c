@@ -1,4 +1,4 @@
-/* harm's convolution and rhythm, from dsp/harm3.c (Apr 2003; the
+/* harm's convolution and rhythm, from dsp/harm3.c (before 2003, file copied Apr 2003; the
  * port in old_i2pi/dsp, which reproduces the 2006 harm.raw render).
  *
  * Copied verbatim from harm3.c: convolve(), clear_cbuf(), click1/2/3(), the

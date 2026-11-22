@@ -2,7 +2,7 @@
 
 *Joshua Reich · Generative Works 1996–2026 · technical statement*
 
-Three programs, written years apart, run as one piece. **past** (December 2003) is a generative music engine: sixteen oscillators, a few scales and a nest of slow sine waves. **harm** (2003, rendered 2006) is a set of feedback delay networks with drums. **p10m1** (March 2012) is a feedback picture of rotating cubes. Here past plays, harm listens to it, and the picture reads past's internal state. This page walks through the ideas and the mathematics, starting with the music, with the code quoted directly from the source. The 2026 version was made with Claude, and each section says which parts are original and which were added ([section 16](#16-who-made-what)).
+Three programs, written years apart, run as one piece. **past** (written before 2003; the surviving files are copies made in 2003) is a generative music engine: sixteen oscillators, a few scales and a nest of slow sine waves. **harm** (also before 2003, rendered 2006) is a set of feedback delay networks with drums. **p10m1** (March 2012) is a feedback picture of rotating cubes. Here past plays, harm listens to it, and the picture reads past's internal state. This page walks through the ideas and the mathematics, starting with the music, with the code quoted directly from the source. The 2026 version was made with Claude, and each section says which parts are original and which were added ([section 16](#16-who-made-what)).
 
 - [1 · Signal flow](#1-signal-flow)
 - [2 · How a voice is made](#2-how-a-voice-is-made)
@@ -22,7 +22,7 @@ Three programs, written years apart, run as one piece. **past** (December 2003) 
 - [16 · Who made what](#16-who-made-what)
 
 > Each section below starts with a note on where its parts came from, using three labels:<br>
->  **`original`** Joshua Reich's 2003 / 2012 code, kept.<br>
+>  **`original`** Joshua Reich's pre-2003 / 2012 code, kept.<br>
 >  **`directed`** Added in 2026 at his direction. The idea, and often the technique, are his; the implementation is Claude's.<br>
 >  **`Claude`** Added in 2026, where the specific choice was made by Claude (Anthropic's AI model) and then accepted or adjusted by him.<br>
 >  [Section 16](#16-who-made-what) gives the numbers.
@@ -39,7 +39,7 @@ All the sound comes from one function, `past_next()`, called 44,100 times a seco
 
 ## 2. How a voice is made
 
-> **`original`** past, December 2003, kept verbatim. The code below is Joshua's. past alone still renders byte-identical to the 2003 program.
+> **`original`** past (pre-2003), kept verbatim. The code below is Joshua's. past alone still renders byte-identical to the original program.
 
 past has sixteen oscillators. A note sets an oscillator's phase increment from its frequency and gives it an attack / hold / release envelope. What a voice sounds like depends on its slot <i>j</i>: it sums <i>N</i> = 2 + (<i>j</i> mod 7) partials, weighted linearly down from the fundamental:
 
@@ -51,7 +51,7 @@ Even partials are plain sines at <i>k</i> times the phase. Odd partials go a qua
 
 When the drive is near zero the partial is a soft sine; at full drive the arctangent squares it off and fills it with odd harmonics. The drive passes through zero twice a cycle, so every voice slowly breathes between pure and buzzing. Odd and even slots are routed to different accumulators (<i>x, y</i> and <i>u, v</i>), which become left and right.
 
-`past_engine.c:879`
+`past_engine.c:892`
 
 ```c
 num = 2 + (j % 7);
@@ -106,11 +106,11 @@ if (k % 2 == 1)
 
 ## 3. The cross-coupled filter
 
-> **`original`** past, 2003, verbatim. **`Claude`** The picture reading these coefficients is a 2026 mapping.
+> **`original`** past (pre-2003), verbatim. **`Claude`** The picture reading these coefficients is a 2026 mapping.
 
 Before the output, the two channels are fed back into each other through the previous three samples. The coefficients are sines with long, unrelated periods, about 10 s, 30 s, 34 s and 2 min, some offset by the current tick. Together they form a time-varying second-order recursive filter in which left drives right and right drives left:
 
-`past_engine.c:927`
+`past_engine.c:940`
 
 ```c
 s->y =  s->y + 0.30*sin(i / 441000.0)*s->oy1 - (0.75*sin(i/894712.0 + s->tick) + 0.23 )*
@@ -192,7 +192,7 @@ static int snap_note (const past_state *s, int note)
 
 ## 5. The arc and the mood
 
-> **`directed`** Starting sparse, building up and down, and an oppressive opening that opens out were Joshua's. **`Claude`** The curves (150 s × 330 s, the 0:20–3:20 smoothstep), the octave drop, the lament and the darkening low-pass are Claude's.
+> **`directed`** Starting sparse, building up and down, and an oppressive opening that opens out, and the mood's 13-minute cycle, were Joshua's. **`Claude`** The curves (150 s × 330 s, the 0:20–3:20 smoothstep), the octave drop, the lament and the darkening low-pass are Claude's.
 
 How many voices may sound at once follows a raised cosine of period 150 s. Its height is modulated by a second raised cosine of period 330 s, so no two swells are the same size. The cap runs from 2 to 16 voices, so the piece opens sparse, builds, and thins out again, and the drums, the choir and the bell come in as it rises.
 
@@ -214,7 +214,7 @@ static int voice_cap (const past_state *s)
 }
 ```
 
-Over that, the **mood** rises once, as a smoothstep from 0 to 1 between 0:20 and 3:20. While it is low, the notes drop an octave, the harmony uses the dark masks, a single choir voice sings a lament around the root, and the whole mix passes through a low-pass filter that starts at 900 Hz and opens (cutoff 900·2<sup>4.5·mood</sup> Hz). The piece begins sparse and oppressive and opens out.
+Over that, the **mood** rises as a smoothstep from 0 to 1 between 0:20 and 3:20. In the endless piece it then cycles every 13 minutes: it stays open until about 10:50, closes over the next two minutes, stays dark for about 30 s, and opens again the way the piece began, so the first eight minutes are unchanged. While it is low, the notes drop an octave, the harmony uses the dark masks, a single choir voice sings a lament around the root, and the whole mix passes through a low-pass filter that starts at 900 Hz and opens (cutoff 900·2<sup>4.5·mood</sup> Hz). The piece begins sparse and oppressive and opens out.
 
 ![Voice cap and mood over ten minutes](figures/tech-arc.svg)
 
@@ -230,7 +230,7 @@ past's long notes, the bass pairs, are sung by a choir. A choir is many voices t
 
 Each frequency bin then gets a **random phase**, and one inverse FFT of 2<sup>18</sup> points turns the whole spectrum into a 5.9-second loop. Because every bin has its own random phase, the loop sounds like many singers each slightly off pitch, and it is perfectly seamless. The ensemble is 45 cents wide; the solo voice of the opening is 12 cents wide (narrower, so it sounds like one person). One table is built for each octave of base pitch, then read at the note's pitch through three vowel formants that drift between "ah" and "oh".
 
-`past_engine.c:192`
+`past_engine.c:194`
 
 ```c
 for (h = 1; h * f0 < 10000.0; h++)
@@ -266,7 +266,7 @@ fft_inverse (re, im, PAD_N);
 
 Under the choir sits a sub-bass that follows its lowest note, folded by octaves into 20–50 Hz. It is a pure fundamental, for weight, plus three voices detuned by −6, 0 and +6 cents. Each detuned voice carries its 2nd and 3rd harmonics, and because they beat slowly against each other the body moves. It all goes through a tanh saturator and a low-pass filter. Its weight, the level, the amount of harmonic body, the drive and the cutoff, rides one of the long swells (section 12).
 
-`past_engine.c:280`
+`past_engine.c:282`
 
 ```c
 static const double det[3] = { 0.99654, 1.0, 1.00347 };
@@ -294,7 +294,7 @@ for (v = 0; v < 3; v++)
 
 ## 8. Coprime polyrhythms
 
-> **`directed`** Meaningful polyrhythms in past, harm and the choir, drums that guide the listener toward them, and using harm's own drum sounds, were Joshua's. **`original`** The thump, tick, blip and sweep are harm's 2003 clicks, re-timed. **`Claude`** The divisions (3, 3+3+3+3+4, 5, 7, 11:8), pairing each stream with a drum that plays at full then drops to 40%, and the drum timbres (log drum, rim, FM bell, tick) are Claude's.
+> **`directed`** Meaningful polyrhythms in past, harm and the choir, drums that guide the listener toward them, and using harm's own drum sounds, were Joshua's. **`original`** The thump, tick, blip and sweep are harm's pre-2003 clicks, re-timed. **`Claude`** The divisions (3, 3+3+3+3+4, 5, 7, 11:8), pairing each stream with a drum that plays at full then drops to 40%, and the drum timbres (log drum, rim, FM bell, tick) are Claude's.
 
 past ticks on a grid of 8192 samples, 0.186 s. Sixteen ticks make a **bar** of 131,072 samples, 2.97 s, and every rhythm in the piece is a division of that bar. Two pulses dividing the same bar into <i>a</i> and <i>b</i> beats coincide at fractions <i>m</i>/<i>a</i> = <i>n</i>/<i>b</i>, that is, every 1/gcd(<i>a</i>, <i>b</i>) of a bar. If <i>a</i> and <i>b</i> are **coprime** (gcd = 1), they meet **only on the downbeat**. Between downbeats every onset of one falls in a different place against the other, and the gaps between successive onsets of the combined pattern are all different. That is what lets the ear hear two streams instead of one.
 
@@ -314,7 +314,7 @@ The piece runs five streams at once. Each musical stream, a voice that is part o
 | right echoes | 7 | harm's right delay network has taps on sevenths of the bar | tick on the ninth |
 | harm's high tick | 11 : 8 | harm's click re-timed: a tick in 11 gated by a pulse in 8 | — |
 
-`past_engine.c:327`
+`past_engine.c:329`
 
 ```c
 /* which hit of its bar layer k is on at bar position b */
@@ -339,7 +339,7 @@ static int poly_index (const past_state *s, int k, unsigned long b)
 
 In endless mode the five divisions are **genes**. About every seven minutes (randomly 6–8, always on a downbeat), one gene is picked at random and given a new value from its pool. The new value must be coprime with the other beats (the accent grouping is exempt), so the streams can never lock together. The changed stream's guide drum comes back to full for four bars, pointing the ear at the new rhythm.
 
-`past_engine.c:341`
+`past_engine.c:343`
 
 ```c
 static int gcd_i (int a, int b) { while (b) { int t = a % b; a = b; b = t; } return a; }
@@ -411,13 +411,13 @@ else d = buf->data[(buf->idx - buf->tap[n].tapnum) % CBUF_SIZE];
 
 ## 10. harm's delay networks
 
-> **`original`** harm, 2003: `convolve()`, the networks and their moving gains, verbatim. **`Claude`** Putting the taps on fractions of past's bar, the stability scaling and the de-clicking glides are Claude's.
+> **`original`** harm (pre-2003): `convolve()`, the networks and their moving gains, verbatim. **`Claude`** Putting the taps on fractions of past's bar, the stability scaling and the de-clicking glides are Claude's.
 
 harm is a bank of seven feedback delay networks. Each is a single circular buffer, 50,000 samples long, read at up to six taps. The taps feed forward to the output with gains <i>g</i><sup>f</sup> and back into the buffer with gains <i>g</i><sup>b</sup>. In z-transform terms each network is an all-pole comb filter with a direct path:
 
 > <i>s</i>[<i>n</i>] = <i>x</i>[<i>n</i>] + Σ<sub><i>k</i></sub> <i>g<sup>b</sup><sub>k</sub></i> <i>s</i>[<i>n</i> − τ<sub><i>k</i></sub>], <i>y</i>[<i>n</i>] = <i>g</i><sub>0</sub><i>x</i>[<i>n</i>] + Σ<sub><i>k</i></sub> (<i>g<sup>f</sup><sub>k</sub></i> + <i>g<sup>b</sup><sub>k</sub></i>) <i>s</i>[<i>n</i> − τ<sub><i>k</i></sub>], <i>H</i>(<i>z</i>) ∝ 1 / (1 − Σ <i>g<sup>b</sup><sub>k</sub></i> <i>z</i><sup>−τ<sub><i>k</i></sub></sup>)
 
-This is harm's original 2003 code, kept exactly:
+This is harm's original pre-2003 code, kept exactly:
 
 `harm_fx.c:45`
 
@@ -535,7 +535,7 @@ past was written to last about eight minutes; its sections are counted in minute
 
 Periods of 5 and 9 minutes realign only after lcm(5, 9) = 45 minutes; together with the 8-minute sections, after lcm(5, 8, 9) = 360 minutes. The random mutations break even that.
 
-`past_engine.c:722`
+`past_engine.c:734`
 
 ```c
 s->choir_rich = (float) (0.5 - 0.5 * cos (2.0 * PI * t / 300.0));
@@ -552,7 +552,7 @@ s->bass_rich  = (float) (0.5 + 0.5 * sin (2.0 * PI * t / 540.0));
 
 p10m1 is a **feedback** image. Every frame, the previous frame is blurred, and the newly rendered cubes replace it only where they are, with the old picture showing through their insides. The blur and the feedback emulate the original's integer arithmetic exactly, truncating toward zero, so small values always lose a little and the interiors sink toward black over many frames. That slow sinking is p10m1's look.
 
-`main.c:1120`
+`main.c:1125`
 
 ```c
 static const char *fs_feedback = GLSL_COMMON
@@ -568,7 +568,7 @@ static const char *fs_feedback = GLSL_COMMON
 
 > θ = 2π · (7·pc mod 12)/12, φ = 22° + 16°·octave, axis = (sin φ cos θ, cos φ, sin φ sin θ), <i>q</i> ← Δ<i>q</i>(axis, ω·d<i>t</i>) · <i>q</i>
 
-`main.c:203`
+`main.c:208`
 
 ```c
 int   note = P.note[j], pc = ((note % 12) + 12) % 12, oc = ((note / 12) % 4 + 4) % 4;
@@ -600,7 +600,7 @@ About one cube in nine is glass. A separate pass renders the glass cubes' surfac
 
 > <i>n</i>′ = normalize(<i>n</i> − (∂<i>h</i>/∂<i>u</i>) <i>t</i> − (∂<i>h</i>/∂<i>v</i>) <i>b</i>)
 
-`main.c:1131`
+`main.c:1136`
 
 ```c
 static const char *fs_flaw = "#version 120\n"
@@ -621,7 +621,7 @@ The glass pass bends the view ray at that normal by **Snell's law** (refractive 
 
 <sub>A view ray bends at the bumped surface; red, green and blue bend by slightly different amounts (the split is exaggerated here so it is visible). The choir's level sets how hard the glass bends light, and the bell sets how widely the colours spread.</sub>
 
-`main.c:1173`
+`main.c:1178`
 
 ```c
 /* Snell at the face (n = 1.5): the ray's bend on screen, times the glass's
@@ -641,7 +641,7 @@ The glass pass bends the view ray at that normal by **Snell's law** (refractive 
 
 The title, PAST / HARM over the credit, is set in D-DIN with CoreText into a coverage mask in the bottom left. Each text pixel has an **integrity** that can only fall. Wherever the evolving picture differs from the plain background behind the letters, they are nibbled away, raggedly, and the damage creeps inward from the bitten edges. The title is stamped in **before** the feedback, so its fragments are dragged into the blur and the echoes. Within a couple of minutes, the work has eaten its own name.
 
-`main.c:1221`
+`main.c:1226`
 
 ```c
 static const char *fs_integ = GLSL_COMMON
@@ -664,8 +664,8 @@ This version was made in November 2026 by Joshua Reich working with Claude, Anth
 
 | file | from | kept from the original |
 |---|---|---|
-| `past_engine.c` | past.c (2003) | 20% of the file's lines. Kept: past's whole main loop (voices, scale tables, timing, the cross-coupled filter). Dropped: its sound-card and file set-up. |
-| `harm_fx.c` | harm3.c (2003) | 36%. Kept: `convolve()`, the networks, the chaotic counters and the clicks. |
+| `past_engine.c` | past.c (pre-2003) | 20% of the file's lines. Kept: past's whole main loop (voices, scale tables, timing, the cross-coupled filter). Dropped: its sound-card and file set-up. |
+| `harm_fx.c` | harm3.c (pre-2003) | 36%. Kept: `convolve()`, the networks, the chaotic counters and the clicks. |
 | `main.c` | p10m1 (2012) | 5%. The GPU port rewrote the drawing; kept are the cube layout and the blur / matte / feedback behaviour, re-expressed as shaders. |
 | everything else | — | New: audio output, reverb, key finding, title, tools. |
 

@@ -18,7 +18,7 @@ Nobody plays this piece. A set of rules, running on a sample clock, decides ever
 
 **Pulse.** Everything sits on a grid of 8192 samples at 44.1 kHz, 0.186 s. Sixteen of these make a bar. Read the grid as sixteenth notes in 4/4 and the tempo is **♩ ≈ 80.7**. Bar numbers and clock times are marked above each system.
 
-**Tuning.** past's note 0 is 140.06 Hz: 880 Hz × 2<sup>n/12</sup>, divided by 2π, because the 2003 code advances its phase in radians without the 2π. That is a C♯3 about **18 cents sharp**, and the whole piece is in equal temperament at that offset. Every note below is written at the nearest equal-tempered pitch: read "C♯" as C♯ +18 cents.
+**Tuning.** past's note 0 is 140.06 Hz: 880 Hz × 2<sup>n/12</sup>, divided by 2π, because the original code advances its phase in radians without the 2π. That is a C♯3 about **18 cents sharp**, and the whole piece is in equal temperament at that offset. Every note below is written at the nearest equal-tempered pitch: read "C♯" as C♯ +18 cents.
 
 **Notation.** The scores are engraved from a log of what the engine played. There are three staves: past's **melody**, the **choir** (past's long notes, sung; in the opening also the solo voice), and past's **low figures**. The choir sings on the bar's three beats, so it is written in half-note triplets, tied while a note is still sounding. Roman numerals under the bass give the harmony at each choir beat, in the key the piece is in at that moment (see [section 3](#3-functional-analysis)). Key signatures follow the key at the start of each excerpt.
 
@@ -206,7 +206,7 @@ Every drum takes its pitch from the current key, so the percussion is part of th
 
 ### Echoes that play rhythms
 
-harm's delay networks (2003) are kept, but their delay times are set to fractions of the bar. A note played on the downbeat comes back as a rhythm: fifths of the bar on the left, sevenths on the right. The echoes feed back into the networks, so they echo again, and the delay gains swell and fade on their own slow cycles. In effect the echoes are two more players, in 5 and in 7, improvising on whatever past plays.
+harm's delay networks (pre-2003) are kept, but their delay times are set to fractions of the bar. A note played on the downbeat comes back as a rhythm: fifths of the bar on the left, sevenths on the right. The echoes feed back into the networks, so they echo again, and the delay gains swell and fade on their own slow cycles. In effect the echoes are two more players, in 5 and in 7, improvising on whatever past plays.
 
 ![One note on the downbeat and its first echoes. Left (orange): ¼, ½, 1, 1½ and 1¾ fifths of a bar. Right (teal): ½, 1 and](figures/music-echo.svg)
 
@@ -227,7 +227,7 @@ Several slow cycles shape the piece, none of them in step with the others:
 | cycle | period | what it shapes |
 |---|---|---|
 | the arc of voices | 150 s, its height varying over 330 s | how many voices may sound at once (2 to 16), and which drums play |
-| the mood | once, 0:20 to 3:20 | from dark (Phrygian, low, filtered, solo lament) to open |
+| the mood | opens 0:20 to 3:20, then a 13-minute cycle (dark again ~12:40 to 13:20) | from dark (Phrygian, low, filtered, solo lament) to open |
 | past's sections | 8 min | which figures play (above) |
 | choir richness | 5 min | ensemble width, extra ranks |
 | bass weight | 9 min | the sub-bass, thin to full |
@@ -240,4 +240,4 @@ Five- and nine-minute cycles line up only every 45 minutes; with the eight-minut
 
 <sub>The first ten minutes: how many voices may sound (orange) and the mood (teal).</sub>
 
-past's rows, voices, timing and minute form are Joshua Reich's 2003 code; harm's delay networks and drums are his 2003 code; the harmony (key finding, masks), choir, bass, guide drums, mutations, reverb and the re-timing of harm were added in 2026, with Claude. The scores are generated from the engine itself (`tools/musiclog`, `tools/mkmusicians.py`). For the mathematics and code, see the [technical statement](TECHNICAL_STATEMENT.md).
+past's rows, voices, timing and minute form are Joshua Reich's pre-2003 code; harm's delay networks and drums are his pre-2003 code; the harmony (key finding, masks), choir, bass, guide drums, mutations, reverb and the re-timing of harm were added in 2026, with Claude. The scores are generated from the engine itself (`tools/musiclog`, `tools/mkmusicians.py`). For the mathematics and code, see the [technical statement](TECHNICAL_STATEMENT.md).

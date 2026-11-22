@@ -25,6 +25,7 @@ static unsigned char	*cov;					/* coverage, tw x th, rows bottom-up */
 static float			*integ, *itmp;			/* integrity, 1 = whole, 0 = eaten */
 static unsigned char	*bg;					/* the background behind the box, this frame */
 static unsigned int		rng = 0x9e3779b9u;
+static double			met[4];					/* the last layout's wm, a2, d2, cap, over H */
 
 static float frand (void)
 {
@@ -95,6 +96,7 @@ void title_build (int W, int H, const char *dir)
 	wm = w0 > w1 ? w0 : w1; wm = wm > w2 ? wm : w2;
 
 	fw = W; fh = H;
+	met[0] = wm / H; met[1] = a2 / H; met[2] = d2 / H; met[3] = cap / H;
 	tx0 = (int) margin; ty0 = (int) margin;
 	tw = (int) ceil (wm + 4);
 	th = (int) ceil (d2 + a2 + gap + cap + lead + cap + 4);
@@ -189,3 +191,7 @@ int title_info (int *x0, int *y0, int *w, int *h, const unsigned char **coverage
 	*x0 = tx0; *y0 = ty0; *w = tw; *h = th; *coverage = cov;
 	return 1;
 }
+
+/* the layout's measures, over the frame height (web/mktitle: the browser
+   scales a CoreText reference to the frame with these) */
+void title_metrics (double m[4]) { int k; for (k = 0; k < 4; k++) m[k] = met[k]; }

@@ -1,4 +1,4 @@
-/* harm's convolution and rhythm (dsp/harm3.c, Apr 2003) applied to
+/* harm's convolution and rhythm (dsp/harm3.c, before 2003) applied to
  * past's output. See harm_fx.c for exactly what is copied and what changed. */
 #ifndef HARM_FX_H
 #define HARM_FX_H

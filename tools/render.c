@@ -1,4 +1,4 @@
-/* tools/render: render past (Dec 2003) offline.
+/* tools/render: render past (before 2003) offline.
  *   render out.wav [seconds]   -> 16-bit stereo WAV (default: the whole 8 min)
  *   render -raw out.raw secs   -> the exact /dev/dsp byte stream (R,L per frame),
  *                                 for comparing with the original program

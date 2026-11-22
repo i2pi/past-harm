@@ -1,4 +1,4 @@
-/* past (Dec 2003) as a sample engine -- see past_engine.h.
+/* past (before 2003) as a sample engine -- see past_engine.h.
  *
  * Source: old_i2pi/music/past2/past.c (originally old_hard_drives/src/music/
  * past2/past.c). The body of past_next() is that program's main loop with its
@@ -154,6 +154,8 @@ static void trigger (past_state *s, int note, float dur, float amp, float a, flo
    pitch, ratio 1..2, so the upper harmonics stay below Nyquist. */
 static float	*pad[2][PAD_TABLES];				/* [solo][octave] */
 static const double pad_base[PAD_TABLES] = { 140.0, 280.0, 560.0 };
+
+#define MOOD_CYCLE	780.0				/* (added) s: the mood's cycle, endless */
 
 static void fft_inverse (double *re, double *im, int n)
 {
@@ -700,12 +702,22 @@ int past_next (past_state *s, short *left, short *right)
 
 	i = ++s->i;
 
-	/* (added) the mood: oppressive at the start, opening over ~0:20-3:20 */
+	/* (added) the mood: oppressive at the start, opening over ~0:20-3:20.
+	   Endless, it cycles every 13 minutes: open until ~10:50, closing over
+	   the next two minutes, ~30 s dark, then opening again as at the start
+	   (the first eight minutes are as they were) */
 	if (s->arc)
 	{
-		float x = (float) ((i / 44100.0 - 20.0) / 180.0);
+		double t = s->endless ? fmod (i / 44100.0, MOOD_CYCLE) : i / 44100.0;
+		float x = (float) ((t - 20.0) / 180.0), y;
 		x = x < 0 ? 0 : x > 1 ? 1 : x;
 		s->mood = x * x * (3 - 2 * x);
+		if (s->endless && t > MOOD_CYCLE - 130.0)
+		{
+			y = (float) ((t - (MOOD_CYCLE - 130.0)) / 120.0);
+			y = y > 1 ? 1 : y;
+			s->mood *= 1.0f - y * y * (3 - 2 * y);
+		}
 	}
 	else s->mood = 1.0f;
 
@@ -818,7 +830,8 @@ int past_next (past_state *s, short *left, short *right)
 		}
 	}
 
-	if (s->choir && i < 54UL * 44100 && i % (2UL * PAST_BAR) == 1)		/* (added) every 2 bars */
+	/* (added) every 2 bars, in the first 54 s (endless: of each mood cycle) */
+	if (s->choir && (s->endless ? fmod (i / 44100.0, MOOD_CYCLE) < 54.0 : i < 54UL * 44100) && i % (2UL * PAST_BAR) == 1)
 	{
 		/* the opening solo: while the mood is dark, a low lament around the
 		   key's root (root, b2, root, b7 below, root, b2, b6 below, root);

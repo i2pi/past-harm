@@ -1,6 +1,6 @@
 # PAST HARM
 
-Joshua Reich, Generative Works 1996–2026. past (2003) and harm (2003) playing
+Joshua Reich, Generative Works 1996–2026. past and harm (both before 2003) playing
 the p10m1 (2012) cube scene.
 
 - [Technical statement](docs/TECHNICAL_STATEMENT.md): the ideas, the mathematics and the code
@@ -14,7 +14,6 @@ macOS 11 or later, the Xcode command-line tools (`xcode-select --install`).
 ## Build
 
     make                    # p10m1-past and tools/render
-    make tools/glasslab     # the glass test card (optional)
     make clean
 
 ## Run
@@ -43,7 +42,7 @@ alongside as `out.mp4.wav`.
 ## Render audio only
 
     tools/render -mix out.wav [seconds]       # the full piece (default 480 s)
-    tools/render out.wav [seconds]            # past alone, as in 2003
+    tools/render out.wav [seconds]            # past alone, as originally written
     tools/render -raw out.raw seconds         # past alone, raw 16-bit stereo
 
 ## Package the macOS app
@@ -55,10 +54,15 @@ Universal (Apple silicon + Intel), signed with the Superchromat Developer ID,
 notarized and stapled. Needs the certificate and the `scion-notary` keychain
 profile (see the script's header).
 
-## Glass test card
+## Build for the web
 
-    tools/glasslab 1600 900 lab.ppm           # a still
-    tools/glasslab 960 540 x 150 frames/      # 150 frames, spinning
+    ./web/build.sh          # needs Emscripten (emcc on PATH, or EMSDK=~/emsdk)
+
+Writes `build/web/past-harm.html`, one self-contained page (~420 KB) that runs
+from a file or any web server: click to start, `f` or double-click for full
+screen. The music runs in an AudioWorklet (audio.c built with
+`-DAUDIO_WORKLET`), the picture is main.c on WebGL2 through `web/gl_compat.c`.
+The canvas is capped at 1920×1080 (1280×720 on phones); `?px=8294400` raises it.
 
 ## Docs
 

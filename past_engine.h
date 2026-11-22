@@ -1,4 +1,4 @@
-/* past (Dec 2003) as a sample engine.
+/* past (before 2003) as a sample engine.
  *
  * This is the main loop of old_i2pi/music/past2/past.c turned inside out: the
  * same state and arithmetic, one stereo sample per call. Its output is

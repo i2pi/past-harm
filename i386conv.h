@@ -29,6 +29,9 @@ static inline unsigned int i386_fistu (double d)
 	if (!(d > -9223372036854775809.0 && d < 9223372036854775808.0)) return 0;
 	return (unsigned int) (long long) d;
 }
-/* `ulong` (Linux <sys/types.h>) was 32 bits on i386; macOS lacks it */
+/* `ulong` (Linux <sys/types.h>) was 32 bits on i386; macOS lacks it
+   (WebAssembly's libc has it, and 32 bits wide) */
+#ifndef __EMSCRIPTEN__
 typedef unsigned int ulong;
+#endif
 #endif

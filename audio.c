@@ -3,10 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#ifndef AUDIO_WORKLET
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
 #include <AudioToolbox/AudioToolbox.h>
+#define LOCK()		pthread_mutex_lock (&mx)
+#define UNLOCK()	pthread_mutex_unlock (&mx)
+#else
+/* web: built alone into the AudioWorklet's WebAssembly (see web/), where the
+   snapshots are read between render calls on the same thread */
+#define LOCK()
+#define UNLOCK()
+#endif
 #include "audio.h"
 #include "key.h"
 
@@ -20,8 +29,10 @@ static key_tracker		key;
 static reverb_state		*rv;			/* ~200 KB of delay lines */
 static past_snap		ring[RING];
 static unsigned long	ring_n;			/* snapshots written */
+#ifndef AUDIO_WORKLET
 static pthread_mutex_t	mx = PTHREAD_MUTEX_INITIALIZER;
 static AudioQueueRef	aq;
+#endif
 static int				looping, offline;
 static double			spin;
 static uint64_t			t0_ns;			/* wall clock of output frame 0 */
@@ -42,7 +53,11 @@ static int		blk_n, blk_shift;
 static double	blk_l2, blk_r2, blk_uv, blk_xy;
 static float	blk_env[PAST_OSCS], blk_click[3], blk_chord, blk_swell, blk_choir;
 
+#ifndef AUDIO_WORKLET
 static uint64_t now_ns (void) { return clock_gettime_nsec_np (CLOCK_UPTIME_RAW); }
+#else
+static uint64_t now_ns (void) { return 0; }
+#endif
 
 static void reset (void)
 {
@@ -66,7 +81,7 @@ static void publish (void)
 	key_update (&key, &eng, blk_env);
 	harm_set_key (hfx, key.pc);
 	eng.key_pc = key.pc; eng.key_minor = key.minor;		/* past's new notes snap to it */
-	pthread_mutex_lock (&mx);
+	LOCK ();
 	p->out = out_n;
 	p->sample = eng.i;
 	p->tick = eng.tick; p->min = eng.min; p->sec = eng.sec; p->done = eng.done;
@@ -116,7 +131,7 @@ static void publish (void)
 	blk_chord = blk_swell = 0;
 	p->choir = blk_choir; blk_choir = 0;
 	ring_n++;
-	pthread_mutex_unlock (&mx);
+	UNLOCK ();
 	blk_n = blk_shift = 0; blk_l2 = blk_r2 = blk_uv = blk_xy = 0;
 }
 
@@ -166,6 +181,53 @@ static void frame (short *l, short *r)
 	if (++blk_n >= SNAP_FRAMES) publish ();
 }
 
+void audio_seek_offline (double seconds)
+{
+	unsigned long target = (unsigned long) (seconds * PAST_RATE);
+	short l, r;
+	if (!offline) { reset (); offline = 1; }
+	while (out_n < target && !eng.done) frame (&l, &r);
+	offline_now = out_n;
+}
+
+#ifdef AUDIO_WORKLET
+/* the browser's frame-exact mode (web/audio_main.c): the music run offline on
+   the page's thread, the snapshot for the frame (-1: not offline) */
+float audio_get_swing (void) { return swing_samples / 8192.0f; }
+int audio_offline_now (past_snap *out, double *seconds)
+{
+	unsigned long lo, k;
+	if (!offline) return -1;
+	if (!ring_n) return 0;
+	lo = ring_n > RING ? ring_n - RING : 0;
+	for (k = ring_n; k-- > lo; )
+		if (ring[k % RING].out <= offline_now || k == lo) { *out = ring[k % RING]; break; }
+	if (seconds) *seconds = out->out / (double) PAST_RATE;
+	return 1;
+}
+
+/* the worklet's calls: render n frames (interleaved L R floats), and read the
+   snapshots published so far (ring index k, the newest RING kept) */
+#define EXPORT __attribute__ ((used, visibility ("default")))
+static float	wbuf[2 * 4096];
+EXPORT void aw_init (float swing) { audio_set_swing (swing); reset (); }
+EXPORT float *aw_render (int n)
+{
+	int f;
+	if (n > 4096) n = 4096;
+	for (f = 0; f < n; f++)
+	{
+		short l, r;
+		frame (&l, &r);
+		wbuf[2 * f] = l / 32768.0f;
+		wbuf[2 * f + 1] = r / 32768.0f;
+	}
+	return wbuf;
+}
+EXPORT unsigned long aw_snaps (void) { return ring_n; }
+EXPORT past_snap *aw_snap (unsigned long k) { return &ring[k % RING]; }
+EXPORT int aw_snap_size (void) { return (int) sizeof (past_snap); }
+#else
 static void aq_cb (void *ud, AudioQueueRef q, AudioQueueBufferRef b)
 {
 	float *out = (float *) b->mAudioData;
@@ -223,15 +285,6 @@ int audio_start (int mute, int loop)
 	return 0;
 }
 
-void audio_seek_offline (double seconds)
-{
-	unsigned long target = (unsigned long) (seconds * PAST_RATE);
-	short l, r;
-	if (!offline) { reset (); offline = 1; }
-	while (out_n < target && !eng.done) frame (&l, &r);
-	offline_now = out_n;
-}
-
 int audio_now (past_snap *out, double *seconds)
 {
 	unsigned long playing, lo, hi, k;
@@ -258,3 +311,4 @@ int audio_now (past_snap *out, double *seconds)
 	if (seconds) *seconds = (found ? out->out : playing) / (double) PAST_RATE;
 	return found;
 }
+#endif /* AUDIO_WORKLET */

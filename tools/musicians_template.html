@@ -73,7 +73,7 @@ svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif;
 <p><b>Pulse.</b> Everything sits on a grid of 8192 samples at 44.1 kHz, 0.186 s. Sixteen of these make a bar.
 Read the grid as sixteenth notes in 4/4 and the tempo is <em>♩ ≈ 80.7</em>. Bar numbers and clock times are
 marked above each system.</p>
-<p><b>Tuning.</b> past's note 0 is 140.06 Hz: 880 Hz × 2<sup>n/12</sup>, divided by 2π, because the 2003 code
+<p><b>Tuning.</b> past's note 0 is 140.06 Hz: 880 Hz × 2<sup>n/12</sup>, divided by 2π, because the original code
 advances its phase in radians without the 2π. That is a C♯3 about <em>18 cents sharp</em>, and the whole piece is
 in equal temperament at that offset. Every note below is written at the nearest equal-tempered pitch: read
 "C♯" as C♯ +18 cents.</p>
@@ -286,7 +286,7 @@ until the piece is near its fullest.</p>
 <!-- ============================================================ -->
 <h2 id="effects"><span class="n">7</span>Effects as instruments</h2>
 <h3>Echoes that play rhythms</h3>
-<p>harm's delay networks (2003) are kept, but their delay times are set to fractions of the bar. A note played on
+<p>harm's delay networks (pre-2003) are kept, but their delay times are set to fractions of the bar. A note played on
 the downbeat comes back as a rhythm: fifths of the bar on the left, sevenths on the right. The echoes feed back into
 the networks, so they echo again, and the delay gains swell and fade on their own slow cycles. In effect the echoes
 are two more players, in 5 and in 7, improvising on whatever past plays.</p>
@@ -306,7 +306,7 @@ three minutes as the mood lifts.</p>
 <table>
 <tr><th>cycle</th><th>period</th><th>what it shapes</th></tr>
 <tr><td>the arc of voices</td><td>150 s, its height varying over 330 s</td><td>how many voices may sound at once (2 to 16), and which drums play</td></tr>
-<tr><td>the mood</td><td>once, 0:20 to 3:20</td><td>from dark (Phrygian, low, filtered, solo lament) to open</td></tr>
+<tr><td>the mood</td><td>opens 0:20 to 3:20, then a 13-minute cycle (dark again ~12:40 to 13:20)</td><td>from dark (Phrygian, low, filtered, solo lament) to open</td></tr>
 <tr><td>past's sections</td><td>8 min</td><td>which figures play (above)</td></tr>
 <tr><td>choir richness</td><td>5 min</td><td>ensemble width, extra ranks</td></tr>
 <tr><td>bass weight</td><td>9 min</td><td>the sub-bass, thin to full</td></tr>
@@ -319,8 +319,8 @@ time from the start, but it never repeats.</p>
 <figure class="score"><svg id="sc-arc"></svg>
 <figcaption>The first ten minutes: how many voices may sound (orange) and the mood (teal).</figcaption></figure>
 
-<p class="note" style="margin-top:56px">past's rows, voices, timing and minute form are Joshua Reich's 2003 code; harm's
-delay networks and drums are his 2003 code; the harmony (key finding, masks), choir, bass, guide drums, mutations, reverb
+<p class="note" style="margin-top:56px">past's rows, voices, timing and minute form are Joshua Reich's pre-2003 code; harm's
+delay networks and drums are his pre-2003 code; the harmony (key finding, masks), choir, bass, guide drums, mutations, reverb
 and the re-timing of harm were added in 2026, with Claude. The scores are generated from the engine itself (<code>tools/musiclog</code>, <code>tools/mkmusicians.py</code>). For the mathematics and code, see the <a href="technical_statement.html">technical statement</a>.</p>
 </main>
 

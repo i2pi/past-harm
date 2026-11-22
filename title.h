@@ -12,4 +12,7 @@ void	title_draw (unsigned char *img, int W, float dt, double now);
 /* the GPU pipeline: the text's box in the frame and its coverage mask */
 int		title_info (int *x0, int *y0, int *w, int *h, const unsigned char **coverage);
 
+/* the last layout's text width, credit ascent and descent, cap height (over H) */
+void	title_metrics (double m[4]);
+
 #endif

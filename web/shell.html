@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PAST HARM</title>
+<style>
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background: #000; }
+body.idle canvas { cursor: none; }
+#start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 0 4.5vh 4.5vh; box-sizing: border-box; color: #f2efe7; cursor: pointer;
+  font-family: "PH-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; user-select: none;
+  -webkit-tap-highlight-color: transparent; background: radial-gradient(ellipse at 70% 30%, #1d2a44 0%, #07090d 70%); }
+#start h1 { font-weight: 700; font-size: 14vh;
+  line-height: 0.86; letter-spacing: 0.03em; margin: 0 0 2.4vh; }
+#start p { margin: 0; font-size: 2.4vh; letter-spacing: 0.04em; opacity: 0.9; }
+#start .go { margin-top: 5vh; font-size: 2.2vh; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.75; }
+#start.busy .go { opacity: 0.35; }
+#msg { position: fixed; left: 4.5vh; top: 4.5vh; right: 4.5vh; color: #f2efe7; font: 2vh "PH-DIN", Helvetica, sans-serif; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<div id="start" role="button" aria-label="Start">
+  <h1>PAST<br>HARM</h1>
+  <p>Joshua Reich Generative Works 1996-2026</p>
+  <p class="go">click to begin &nbsp;·&nbsp; sound on &nbsp;·&nbsp; f for full screen</p>
+</div>
+<div id="msg"></div>
+<script>
+"use strict";
+const RATE = 44100;
+/* D-DIN, regular and bold, from bytes (a data: URL in @font-face is refused
+   where the page's policy limits font sources, e.g. in sandboxed previews) */
+const FONTS = [['__FONT_REGULAR__', '400'], ['__FONT_BOLD__', '700']].map(([b, w]) => {
+  const bin = atob(b), u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  const f = new FontFace('PH-DIN', u.buffer, { weight: w });
+  document.fonts.add(f);
+  return f.load().catch((e) => console.warn('font', w, e));
+});
+let resolveReady;
+var Module = {
+  canvas: document.getElementById('canvas'),
+  print: (t) => console.log(t), printErr: (t) => console.warn(t),
+  ready: new Promise((r) => { resolveReady = r; }),
+  onRuntimeInitialized: () => resolveReady(),
+};
+const ENGINE_WASM = "__ENGINE_WASM__";		/* audio.c + past + harm, built for the worklet */
+const params = new URLSearchParams(location.search);
+
+function b64bytes(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+function fail(t) { document.getElementById('msg').textContent = t; console.error(t); }
+
+/* ---- the music: an AudioWorklet running the engine's WebAssembly ---- */
+const WORKLET = `
+class Past extends AudioWorkletProcessor {
+  constructor(o) {
+    super();
+    const stub = new Proxy({}, { get: () => () => 0 });
+    const mod = new WebAssembly.Module(o.processorOptions.wasm);
+    this.x = new WebAssembly.Instance(mod, { env: stub, wasi_snapshot_preview1: stub }).exports;
+    if (this.x._initialize) this.x._initialize();
+    this.x.aw_init(o.processorOptions.swing);
+    this.size = this.x.aw_snap_size();
+    this.sent = 0;
+    this.port.postMessage({ start: currentFrame });
+  }
+  process(inputs, outputs) {
+    const out = outputs[0], n = out[0].length, x = this.x;
+    const p = x.aw_render(n), f = new Float32Array(x.memory.buffer, p, 2 * n);
+    const L = out[0], R = out[1] || out[0];
+    for (let i = 0; i < n; i++) { L[i] = f[2 * i]; R[i] = f[2 * i + 1]; }
+    const have = x.aw_snaps() >>> 0;
+    if (have !== this.sent) {
+      const k = Math.min((have - this.sent) >>> 0, 64), buf = new Uint8Array(k * this.size);
+      for (let j = 0; j < k; j++) {
+        const idx = (have - k + j) >>> 0;
+        buf.set(new Uint8Array(x.memory.buffer, x.aw_snap(idx), this.size), j * this.size);
+      }
+      this.sent = have;
+      this.port.postMessage({ snaps: buf.buffer, size: this.size }, [buf.buffer]);
+    }
+    return true;
+  }
+}
+registerProcessor('past', Past);
+`;
+
+let actx = null, startFrame = 0;
+Module.audibleFrame = function () {
+  if (!actx) return 0;
+  const lat = (actx.outputLatency || 0) + (actx.baseLatency || 0);
+  return (actx.currentTime - lat) * RATE - startFrame;
+};
+
+async function startAudio(swing) {
+  actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: RATE, latencyHint: 'playback' });
+  if (actx.sampleRate !== RATE) console.warn('sample rate', actx.sampleRate);
+  /* a blob: URL fails from file:// (origin null); a data: URL works there and online */
+  try { await actx.audioWorklet.addModule('data:text/javascript;base64,' + btoa(WORKLET)); }
+  catch (e) { await actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: 'text/javascript' }))); }
+  const node = new AudioWorkletNode(actx, 'past', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2],
+    processorOptions: { wasm: b64bytes(ENGINE_WASM).buffer, swing } });
+  node.port.onmessage = (e) => {
+    const d = e.data;
+    if (d.start !== undefined) { startFrame = d.start; return; }
+    const all = new Uint8Array(d.snaps), slot = Module._aw_slot();
+    if (Module._aw_main_snap_size() !== d.size) { fail('snapshot layout mismatch'); return; }
+    for (let o = 0; o < all.length; o += d.size) { HEAPU8.set(all.subarray(o, o + d.size), slot); Module._aw_push(); }
+  };
+  node.connect(actx.destination);
+  await actx.resume();
+}
+
+/* ---- the canvas: CSS size, capped (?px=W*H to change) ---- */
+const canvas = document.getElementById('canvas');
+const mobile = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent));
+const MAX_PX = +params.get('px') || (mobile ? 1280 * 720 : 1920 * 1080);
+function fitCanvas() {
+  /* CSS pixels, as the macOS app renders in points (?hidpi for device pixels:
+     sharper, but the blur, glow and 1-pixel lines are then half as strong) */
+  const dpr = params.has('hidpi') ? (window.devicePixelRatio || 1) : 1;
+  let w = canvas.clientWidth * dpr, h = canvas.clientHeight * dpr;
+  const s = Math.min(1, Math.sqrt(MAX_PX / (w * h)));
+  w = Math.max(16, Math.round(w * s)); h = Math.max(16, Math.round(h * s));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+let resizeTimer = 0;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fitCanvas, 250); });
+
+/* ---- the title: CoreText's own setting (title.c), made at 2160 lines high
+   by web/mktitle and scaled to the frame here by area (box) averaging, with
+   title.c's layout -- the browser's text renderer kerns, weights and
+   antialiases differently ---- */
+const TITLE_REF = "__TITLE_REF__";			/* deflated coverage, rows bottom-up */
+const TITLE_MET = __TITLE_MET__;			/* [w, h, Href, x0, wm, a2, d2, cap] (measures over H) */
+let titleRef = null;
+async function loadTitle() {
+  const z = b64bytes(TITLE_REF);
+  const buf = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer();
+  titleRef = new Uint8Array(buf);
+}
+function boxWeights(nOut, nIn, k) {			/* out pixel i covers [2 + (i - 2)k, 2 + (i - 1)k) of the reference */
+  const W = [];
+  for (let i = 0; i < nOut; i++) {
+    const a = 2 + (i - 2) * k, b = a + k, w = [];
+    for (let j = Math.floor(a); j < Math.ceil(b); j++)
+      if (j >= 0 && j < nIn) { const c = Math.min(b, j + 1) - Math.max(a, j); if (c > 0) w.push(j, c / k); }
+    W.push(w);
+  }
+  return W;
+}
+Module.titleMask = function (W, H, out) {
+  if (!titleRef) return 0;
+  const [rw, rh, Href, , wmR, a2R, d2R, capR] = TITLE_MET;
+  const margin = H * 0.045, gap = H * 0.018, lead = H * 0.14 * 0.02;
+  const wm = wmR * H, a2 = a2R * H, d2 = d2R * H, cap = capR * H;
+  const tx0 = Math.floor(margin), ty0 = Math.floor(margin);
+  let tw = Math.ceil(wm + 4), th = Math.ceil(d2 + a2 + gap + cap + lead + cap + 4);
+  if (tx0 + tw > W) tw = W - tx0;
+  if (ty0 + th > H) th = H - ty0;
+  if (tw <= 0 || th <= 0) return 0;
+  const k = Href / H, wx = boxWeights(tw, rw, k), wy = boxWeights(th, rh, k);
+  const tmp = new Float32Array(tw * rh);			/* horizontal pass, every reference row */
+  for (let y = 0; y < rh; y++) for (let x = 0; x < tw; x++) {
+    const w = wx[x]; let s = 0;
+    for (let q = 0; q < w.length; q += 2) s += titleRef[y * rw + w[q]] * w[q + 1];
+    tmp[y * tw + x] = s;
+  }
+  const p = Module._malloc(tw * th);
+  for (let y = 0; y < th; y++) {
+    const w = wy[y];
+    for (let x = 0; x < tw; x++) {
+      let s = 0;
+      for (let q = 0; q < w.length; q += 2) s += tmp[w[q] * tw + x] * w[q + 1];
+      HEAPU8[p + y * tw + x] = Math.min(255, Math.round(s));
+    }
+  }
+  HEAP32[(out >> 2)] = tx0; HEAP32[(out >> 2) + 1] = ty0; HEAP32[(out >> 2) + 2] = tw; HEAP32[(out >> 2) + 3] = th; HEAP32[(out >> 2) + 4] = p;
+  return 1;
+};
+
+/* ---- start on a click (browsers only play sound after one) ---- */
+let started = false;
+async function start() {
+  if (started) return;
+  started = true;
+  const st = document.getElementById('start');
+  st.classList.add('busy');
+  try {
+    await Promise.all([...FONTS, loadTitle()]);
+    await Module.ready;
+    fitCanvas();
+    Module.callMain([]);
+    await startAudio(Module._aw_swing());
+    st.remove();
+  } catch (e) { fail('could not start: ' + e); started = false; st.classList.remove('busy'); }
+}
+document.getElementById('start').addEventListener('click', start);
+if (params.has('autostart')) start();		/* (testing: needs autoplay allowed) */
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') start();
+  if (e.key === 'f') { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); }
+});
+canvas.addEventListener('dblclick', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); });
+let idleTimer = 0;
+window.addEventListener('mousemove', () => { document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add('idle'), 2500); });
+document.addEventListener('visibilitychange', () => { if (actx) { if (document.hidden) actx.suspend(); else actx.resume(); } });
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
