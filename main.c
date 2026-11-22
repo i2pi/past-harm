@@ -18,7 +18,7 @@
  *   output level, u/v mix  -> brightness, saturation
  *   min:sec sections       -> slow dolly over the 8 minutes
  *
- *   ./p10m1-past [-f] [-mute] [-loop] [-shot out.ppm -at seconds]
+ *   ./p10m1-past [-f] [-mute] [-shot out.ppm -at seconds]
  *   keys: f fullscreen, Esc quit
  */
 #ifdef __EMSCRIPTEN__
@@ -48,7 +48,7 @@
 /* ------------------------------------------------------------------ */
 
 static int		W = 1280, H = 720;
-static int		fullscreen, mute, loop_play;
+static int		fullscreen, mute;
 static const char *shot_path;
 static const char *video_path;			/* -video out.mp4: render offline (see video_render) */
 static int		offline_frames;				/* the browser's ?at=: stepped like the video, for comparing */
@@ -1567,12 +1567,6 @@ static void scene (void)
 	}
 	frame_dt = dt;
 	if (!audio_now (&P, &now_s)) { glBindFramebufferEXT (GL_FRAMEBUFFER_EXT, 0); glClearColor (0, 0, 0, 1); glClear (GL_COLOR_BUFFER_BIT); glutSwapBuffers (); return; }
-	if (P.done && !loop_play)
-	{
-		static double end_t;
-		if (!end_t) end_t = wall;
-		if (wall - end_t > 4) exit (0);
-	}
 	gpu_alloc ();
 	update_visuals (dt);
 	HUE = V.hue;
@@ -1898,7 +1892,6 @@ int main (int argc, char **argv)
 	{
 		if (!strcmp (argv[i], "-f")) fullscreen = 1;
 		else if (!strcmp (argv[i], "-mute")) mute = 1;
-		else if (!strcmp (argv[i], "-loop")) loop_play = 1;
 		else if (!strcmp (argv[i], "-shot") && i + 1 < argc) shot_path = argv[++i];
 		else if (!strcmp (argv[i], "-at") && i + 1 < argc) shot_at = atof (argv[++i]);
 		else if (!strcmp (argv[i], "-swing") && i + 1 < argc) swing = (float) atof (argv[++i]);
@@ -1910,7 +1903,7 @@ int main (int argc, char **argv)
 		else if (!strcmp (argv[i], "-vsecs") && i + 1 < argc) vsecs = atof (argv[++i]);
 		else if (!strcmp (argv[i], "-vfps") && i + 1 < argc) vfps = (float) atof (argv[++i]);
 		else if (!strcmp (argv[i], "-samples") && i + 1 < argc) msaa_samples = atoi (argv[++i]);
-		else { fprintf (stderr, "usage: %s [-f] [-mute] [-loop] [-retina] [-samples n] [-video out.mp4 [-vsize 4096x2304] [-vsecs 480] [-vfps 30]] [-swing 0..0.33] [-shot out.ppm -at seconds]\n", argv[0]); return 1; }
+		else { fprintf (stderr, "usage: %s [-f] [-mute] [-retina] [-samples n] [-video out.mp4 [-vsize 4096x2304] [-vsecs 480] [-vfps 30]] [-swing 0..0.33] [-shot out.ppm -at seconds]\n", argv[0]); return 1; }
 	}
 
 	/* p10m1's cube layout: srandom(0) and the same draws, in the same order */
@@ -1980,7 +1973,7 @@ int main (int argc, char **argv)
 	glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
 	glEnable (GL_MULTISAMPLE);
 	audio_set_swing (swing);
-	if (!shot_path) audio_start (mute, loop_play);
+	if (!shot_path) audio_start (mute);
 	glutMainLoop ();
 	return 0;
 #endif

@@ -6,36 +6,40 @@
 <title>PAST HARM</title>
 <style>
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background: #000; }
-body.idle canvas { cursor: none; }
-#start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 0 0 4.5vh 4.5vh; box-sizing: border-box; color: #f2efe7; cursor: pointer;
+#canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background: #000; }
+body.playing.idle #canvas { cursor: none; }
+#start { position: fixed; inset: 0; color: #f2efe7; cursor: pointer;
   font-family: "PH-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; user-select: none;
   -webkit-tap-highlight-color: transparent; background: radial-gradient(ellipse at 70% 30%, #1d2a44 0%, #07090d 70%); }
-#start h1 { font-weight: 700; font-size: 14vh;
-  line-height: 0.86; letter-spacing: 0.03em; margin: 0 0 2.4vh; }
-#start p { margin: 0; font-size: 2.4vh; letter-spacing: 0.04em; opacity: 0.9; }
-#start .go { margin-top: 5vh; font-size: 2.2vh; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.75; }
+/* the title: the piece's own (CoreText's setting, scaled, in title.c's layout), drawn by showTitle */
+#tcan { position: absolute; display: block; }
+#start .go { position: absolute; right: 4.5vh; bottom: 4.5vh; margin: 0; font-size: 2.4vh; letter-spacing: 0.04em; opacity: 0.75; }
 #start.busy .go { opacity: 0.35; }
+#gh { position: fixed; top: 4.5vh; right: 4.5vh; width: 3.2vh; height: 3.2vh; min-width: 22px; min-height: 22px; color: #f2efe7;
+  opacity: 0.7; transition: opacity 0.4s; z-index: 2; }
+#gh:hover { opacity: 1; }
+#gh svg { width: 100%; height: 100%; display: block; fill: currentColor; }
 #msg { position: fixed; left: 4.5vh; top: 4.5vh; right: 4.5vh; color: #f2efe7; font: 2vh "PH-DIN", Helvetica, sans-serif; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
 <div id="start" role="button" aria-label="Start">
-  <h1>PAST<br>HARM</h1>
-  <p>Joshua Reich Generative Works 1996-2026</p>
+  <canvas id="tcan" aria-label="PAST HARM. Joshua Reich Generative Works 1996-2026. superchromat / i2pi"></canvas>
   <p class="go">click to begin &nbsp;·&nbsp; sound on &nbsp;·&nbsp; f for full screen</p>
 </div>
+<a id="gh" href="https://github.com/i2pi/past-harm" target="_blank" rel="noopener" aria-label="Source on GitHub" title="Source on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
 <div id="msg"></div>
 <script>
 "use strict";
 const RATE = 44100;
 /* D-DIN, regular and bold, from bytes (a data: URL in @font-face is refused
    where the page's policy limits font sources, e.g. in sandboxed previews) */
+const FONT_BYTES = {};				/* the fonts' bytes, for their metrics (titleLayout) */
 const FONTS = [['__FONT_REGULAR__', '400'], ['__FONT_BOLD__', '700']].map(([b, w]) => {
   const bin = atob(b), u = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  FONT_BYTES[w] = u;
   const f = new FontFace('PH-DIN', u.buffer, { weight: w });
   document.fonts.add(f);
   return f.load().catch((e) => console.warn('font', w, e));
@@ -130,57 +134,78 @@ function fitCanvas() {
 let resizeTimer = 0;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fitCanvas, 250); });
 
-/* ---- the title: CoreText's own setting (title.c), made at 2160 lines high
-   by web/mktitle and scaled to the frame here by area (box) averaging, with
-   title.c's layout -- the browser's text renderer kerns, weights and
-   antialiases differently ---- */
-const TITLE_REF = "__TITLE_REF__";			/* deflated coverage, rows bottom-up */
-const TITLE_MET = __TITLE_MET__;			/* [w, h, Href, x0, wm, a2, d2, cap] (measures over H) */
-let titleRef = null;
-async function loadTitle() {
-  const z = b64bytes(TITLE_REF);
-  const buf = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer();
-  titleRef = new Uint8Array(buf);
+/* ---- the title: set here in D-DIN with title.c's layout (sizes from the
+   frame height; PAST and HARM stacked by cap height; the credit lines by the
+   font's ascent and descent, read from its own tables as CoreText does);
+   whole lines, so the font's kerning applies, tracked like CoreText's kern
+   attribute. Coverage in R, rows bottom-up. ---- */
+function fontMetrics(u) {				/* hhea ascent / descent, OS/2 cap height, over the em */
+  const v = new DataView(u.buffer), n = v.getUint16(4), t = {};
+  for (let i = 0; i < n; i++) t[String.fromCharCode(...u.subarray(12 + 16 * i, 16 + 16 * i))] = v.getUint32(20 + 16 * i);
+  const em = v.getUint16(t.head + 18);
+  return { asc: v.getInt16(t.hhea + 4) / em, desc: -v.getInt16(t.hhea + 6) / em, cap: v.getInt16(t['OS/2'] + 88) / em };
 }
-function boxWeights(nOut, nIn, k) {			/* out pixel i covers [2 + (i - 2)k, 2 + (i - 1)k) of the reference */
-  const W = [];
-  for (let i = 0; i < nOut; i++) {
-    const a = 2 + (i - 2) * k, b = a + k, w = [];
-    for (let j = Math.floor(a); j < Math.ceil(b); j++)
-      if (j >= 0 && j < nIn) { const c = Math.min(b, j + 1) - Math.max(a, j); if (c > 0) w.push(j, c / k); }
-    W.push(w);
-  }
-  return W;
-}
-Module.titleMask = function (W, H, out) {
-  if (!titleRef) return 0;
-  const [rw, rh, Href, , wmR, a2R, d2R, capR] = TITLE_MET;
-  const margin = H * 0.045, gap = H * 0.018, lead = H * 0.14 * 0.02;
-  const wm = wmR * H, a2 = a2R * H, d2 = d2R * H, cap = capR * H;
+function titleLayout(W, H) {
+  if (!FONT_BYTES['400'] || !FONT_BYTES['700']) return null;
+  const big = H * 0.14, small = H * 0.024, margin = H * 0.045, gap = H * 0.018, lead = big * 0.02, lsp = small * 1.35;
+  const mb = fontMetrics(FONT_BYTES['700']), mr = fontMetrics(FONT_BYTES['400']);
+  const a2 = mr.asc * small, d2 = mr.desc * small, cap = mb.cap * big;
+  const c = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  /* PAST tracked so its T's stem stands on HARM's M's first stem (as title.c) */
+  const lines = [['PAST', '700', big, big * (0.03 + 0.0085 / 3)], ['HARM', '700', big, big * 0.03],
+                 ['Joshua Reich Generative Works 1996-2026', '400', small, small * 0.04], ['superchromat / i2pi', '400', small, small * 0.04]];
+  const tracked = 'letterSpacing' in c;
+  const set = (w, size, k) => { c.font = w + ' ' + size + 'px "PH-DIN"'; if (tracked) c.letterSpacing = k + 'px'; };
+  const width = ([t, w, size, k]) => { set(w, size, k); return tracked ? c.measureText(t).width : c.measureText(t).width + k * [...t].length; };
+  const wm = Math.max(...lines.map(width));
   const tx0 = Math.floor(margin), ty0 = Math.floor(margin);
-  let tw = Math.ceil(wm + 4), th = Math.ceil(d2 + a2 + gap + cap + lead + cap + 4);
+  let tw = Math.ceil(wm + 4), th = Math.ceil(d2 + lsp + a2 + gap + cap + lead + cap + 4);
   if (tx0 + tw > W) tw = W - tx0;
   if (ty0 + th > H) th = H - ty0;
-  if (tw <= 0 || th <= 0) return 0;
-  const k = Href / H, wx = boxWeights(tw, rw, k), wy = boxWeights(th, rh, k);
-  const tmp = new Float32Array(tw * rh);			/* horizontal pass, every reference row */
-  for (let y = 0; y < rh; y++) for (let x = 0; x < tw; x++) {
-    const w = wx[x]; let s = 0;
-    for (let q = 0; q < w.length; q += 2) s += titleRef[y * rw + w[q]] * w[q + 1];
-    tmp[y * tw + x] = s;
-  }
-  const p = Module._malloc(tw * th);
-  for (let y = 0; y < th; y++) {
-    const w = wy[y];
-    for (let x = 0; x < tw; x++) {
-      let s = 0;
-      for (let q = 0; q < w.length; q += 2) s += tmp[w[q] * tw + x] * w[q + 1];
-      HEAPU8[p + y * tw + x] = Math.min(255, Math.round(s));
-    }
-  }
+  if (tw <= 0 || th <= 0) return null;
+  c.canvas.width = tw; c.canvas.height = th;
+  c.fillStyle = '#000'; c.fillRect(0, 0, tw, th); c.fillStyle = '#fff'; c.textBaseline = 'alphabetic';
+  const base = [2 + d2 + lsp + a2 + gap + cap + lead, 2 + d2 + lsp + a2 + gap, 2 + d2 + lsp, 2 + d2];	/* from the bottom, as title.c */
+  lines.forEach(([t, w, size, k], i) => {
+    set(w, size, k);
+    if (tracked) c.fillText(t, 2, th - base[i]);
+    else { let x = 2; for (const ch of t) { c.fillText(ch, x, th - base[i]); x += c.measureText(ch).width + k; } }
+  });
+  const img = c.getImageData(0, 0, tw, th).data, cov = new Uint8Array(tw * th);
+  for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) cov[y * tw + x] = img[((th - 1 - y) * tw + x) * 4];
+  return { tx0, ty0, tw, th, cov };
+}
+Module.titleMask = function (W, H, out) {
+  const t = titleLayout(W, H);
+  if (!t) return 0;
+  const { tx0, ty0, tw, th, cov } = t, p = Module._malloc(tw * th);
+  HEAPU8.set(cov, p);
   HEAP32[(out >> 2)] = tx0; HEAP32[(out >> 2) + 1] = ty0; HEAP32[(out >> 2) + 2] = tw; HEAP32[(out >> 2) + 3] = th; HEAP32[(out >> 2) + 4] = p;
   return 1;
 };
+
+/* the start page: the title exactly as the piece's first frame stamps it
+   (frame pixels = CSS pixels, colour 242 239 231 at 94%) */
+function showTitle() {
+  const c = document.getElementById('tcan');
+  if (!c) return;
+  const W = window.innerWidth, H = window.innerHeight, t = titleLayout(W, H);
+  if (!t) return;
+  const dpr = window.devicePixelRatio || 1;
+  c.width = t.tw; c.height = t.th;
+  c.style.width = t.tw + 'px'; c.style.height = t.th + 'px';
+  c.style.left = t.tx0 + 'px'; c.style.bottom = t.ty0 + 'px';
+  const g = c.getContext('2d'), img = g.createImageData(t.tw, t.th);
+  for (let y = 0; y < t.th; y++) for (let x = 0; x < t.tw; x++) {
+    const o = ((t.th - 1 - y) * t.tw + x) * 4;			/* rows bottom-up */
+    img.data[o] = 242; img.data[o + 1] = 239; img.data[o + 2] = 231;
+    img.data[o + 3] = Math.floor(t.cov[y * t.tw + x] * 0.94);
+  }
+  g.putImageData(img, 0, 0);
+  c.style.imageRendering = dpr > 1 ? 'auto' : 'pixelated';
+}
+Promise.all(FONTS).then(showTitle);
+window.addEventListener('resize', showTitle);
 
 /* ---- start on a click (browsers only play sound after one) ---- */
 let started = false;
@@ -190,12 +215,14 @@ async function start() {
   const st = document.getElementById('start');
   st.classList.add('busy');
   try {
-    await Promise.all([...FONTS, loadTitle()]);
+    await Promise.all(FONTS);
     await Module.ready;
     fitCanvas();
     Module.callMain([]);
     await startAudio(Module._aw_swing());
     st.remove();
+    document.getElementById('gh').remove();			/* the link is the start page's only */
+    document.body.classList.add('playing'); wake();
   } catch (e) { fail('could not start: ' + e); started = false; st.classList.remove('busy'); }
 }
 document.getElementById('start').addEventListener('click', start);
@@ -206,7 +233,8 @@ window.addEventListener('keydown', (e) => {
 });
 canvas.addEventListener('dblclick', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); });
 let idleTimer = 0;
-window.addEventListener('mousemove', () => { document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add('idle'), 2500); });
+function wake() { document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add('idle'), 2500); }
+window.addEventListener('mousemove', wake);
 document.addEventListener('visibilitychange', () => { if (actx) { if (document.hidden) actx.suspend(); else actx.resume(); } });
 </script>
 {{{ SCRIPT }}}

@@ -18,13 +18,12 @@ macOS 11 or later, the Xcode command-line tools (`xcode-select --install`).
 
 ## Run
 
-    ./p10m1-past [-f] [-mute] [-loop] [-retina] [-samples n] [-swing 0..0.33]
+    ./p10m1-past [-f] [-mute] [-retina] [-samples n] [-swing 0..0.33]
 
 | option | |
 |---|---|
 | `-f` | start full screen |
 | `-mute` | no audio |
-| `-loop` | start again when the piece ends |
 | `-retina` | render at the display's full (Retina) resolution |
 | `-samples n` | multisampling (default 4) |
 | `-swing f` | swing past's off-beats |

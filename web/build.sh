@@ -10,10 +10,6 @@ fi
 OUT=build/web
 mkdir -p "$OUT"
 
-# the title as CoreText sets it, at a reference size (built and run on macOS)
-cc -O2 -DPDIR="\"$PWD\"" -o build/mktitle web/mktitle.c title.c -framework ApplicationServices -framework CoreText
-build/mktitle "$OUT/title.gray"
-
 # the music, for the AudioWorklet: a standalone module (no JS runtime), the
 # engine without FMA contraction as in the macOS build
 emcc -O3 -ffp-contract=off -DAUDIO_WORKLET \
@@ -41,13 +37,7 @@ b64 = lambda p: base64.b64encode(open(p, 'rb').read()).decode()
 page = open(out + '/main.html').read()
 page = page.replace('__ENGINE_WASM__', b64(out + '/engine.wasm'))
 page = page.replace('__FONT_REGULAR__', b64('fonts/D-DIN.otf')).replace('__FONT_BOLD__', b64('fonts/D-DIN-Bold.otf'))
-import zlib
-t = open(out + '/title.gray', 'rb').read()
-nl = t.index(b'\n'); hdr = t[:nl].decode().split(); raw = t[nl + 1:]
-met = [int(v) for v in hdr[:4]] + [float(v) for v in hdr[4:]]
-page = page.replace('__TITLE_MET__', '[' + ','.join(repr(v) for v in met) + ']')
-page = page.replace('__TITLE_REF__', base64.b64encode(zlib.compress(raw, 9)).decode())
 open(out + '/past-harm.html', 'w').write(page)
 print('%s/past-harm.html: %d KB' % (out, len(page) // 1024))
 PY
-rm -f "$OUT/main.html" "$OUT/title.gray" build/mktitle
+rm -f "$OUT/main.html"

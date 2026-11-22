@@ -51,7 +51,7 @@ typedef struct
    a step (0 = past's original timing); call before audio_start / seek */
 void	audio_set_swing (float frac);
 /* start real-time playback (mute: no device, a real-time thread instead) */
-int		audio_start (int mute, int loop);
+int		audio_start (int mute);
 /* the snapshot for what is audible now; returns 0 before the first one */
 int		audio_now (past_snap *out, double *seconds);
 /* offline: run up to `seconds` of output and make that the "now" (no audio) */

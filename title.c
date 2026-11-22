@@ -1,4 +1,5 @@
-/* title: "PAST" / "HARM" / "Joshua Reich Generative Works 1996-2026", bottom
+/* title: "PAST" / "HARM" / "Joshua Reich Generative Works 1996-2026" /
+ * "superchromat / i2pi", bottom
  * left, in D-DIN, eaten by the picture.
  *
  * The lines are set once with CoreText into a coverage mask (D-DIN Bold, large,
@@ -25,7 +26,6 @@ static unsigned char	*cov;					/* coverage, tw x th, rows bottom-up */
 static float			*integ, *itmp;			/* integrity, 1 = whole, 0 = eaten */
 static unsigned char	*bg;					/* the background behind the box, this frame */
 static unsigned int		rng = 0x9e3779b9u;
-static double			met[4];					/* the last layout's wm, a2, d2, cap, over H */
 
 static float frand (void)
 {
@@ -78,28 +78,33 @@ void title_build (int W, int H, const char *dir)
 	CGFloat big = H * 0.14, small = H * 0.024, margin = H * 0.045, gap = H * 0.018, lead = big * 0.02;
 	CTFontRef fb = load_font (dir, "D-DIN-Bold.otf", "D-DIN-Bold", big);
 	CTFontRef fr = load_font (dir, "D-DIN.otf", "D-DIN", small);
-	CTLineRef l0, l1, l2;
+	CGFloat lsp = small * 1.35;							/* the two small lines' spacing */
+	CTLineRef l0, l1, l2, l3;
 	CGContextRef cx;
 	CGColorSpaceRef gs;
-	CGFloat a0, d0, a1, d1, a2, d2, w0, w1, w2, wm, cap;
+	CGFloat a0, d0, a1, d1, a2, d2, a3, d3, w0, w1, w2, w3, wm, cap;
 	int i;
 
 	if (!fb) fb = CTFontCreateWithName (CFSTR ("Helvetica-Bold"), big, NULL);
 	if (!fr) fr = CTFontCreateWithName (CFSTR ("Helvetica"), small, NULL);
-	l0 = make_line (fb, "PAST", (float) (big * 0.03));
+	/* PAST is tracked a little wider than HARM, so the stem of its T stands
+	   on the M's first stem (D-DIN Bold: 0.0085 em short at the same
+	   tracking, over PAST's three gaps) */
+	l0 = make_line (fb, "PAST", (float) (big * (0.03 + 0.0085 / 3)));
 	l1 = make_line (fb, "HARM", (float) (big * 0.03));
 	l2 = make_line (fr, "Joshua Reich Generative Works 1996-2026", (float) (small * 0.04));
+	l3 = make_line (fr, "superchromat / i2pi", (float) (small * 0.04));
 	w0 = CTLineGetTypographicBounds (l0, &a0, &d0, NULL);
 	w1 = CTLineGetTypographicBounds (l1, &a1, &d1, NULL);
 	w2 = CTLineGetTypographicBounds (l2, &a2, &d2, NULL);
+	w3 = CTLineGetTypographicBounds (l3, &a3, &d3, NULL);
 	cap = CTFontGetCapHeight (fb);					/* capitals only: stack by cap height */
-	wm = w0 > w1 ? w0 : w1; wm = wm > w2 ? wm : w2;
+	wm = w0 > w1 ? w0 : w1; wm = wm > w2 ? wm : w2; wm = wm > w3 ? wm : w3;
 
 	fw = W; fh = H;
-	met[0] = wm / H; met[1] = a2 / H; met[2] = d2 / H; met[3] = cap / H;
 	tx0 = (int) margin; ty0 = (int) margin;
 	tw = (int) ceil (wm + 4);
-	th = (int) ceil (d2 + a2 + gap + cap + lead + cap + 4);
+	th = (int) ceil (d2 + lsp + a2 + gap + cap + lead + cap + 4);
 	if (tx0 + tw > W) tw = W - tx0;
 	if (ty0 + th > H) th = H - ty0;
 	free (cov); free (integ); free (itmp); free (bg);
@@ -116,10 +121,12 @@ void title_build (int W, int H, const char *dir)
 	CGContextSetShouldSmoothFonts (cx, false);
 	CGContextSetGrayFillColor (cx, 1, 1);
 	CGContextSetTextPosition (cx, 2, 2 + d2);
+	CTLineDraw (l3, cx);
+	CGContextSetTextPosition (cx, 2, 2 + d2 + lsp);						/* the credit's baseline */
 	CTLineDraw (l2, cx);
-	CGContextSetTextPosition (cx, 2, 2 + d2 + a2 + gap);				/* HARM's baseline */
+	CGContextSetTextPosition (cx, 2, 2 + d2 + lsp + a2 + gap);			/* HARM's */
 	CTLineDraw (l1, cx);
-	CGContextSetTextPosition (cx, 2, 2 + d2 + a2 + gap + cap + lead);	/* PAST's */
+	CGContextSetTextPosition (cx, 2, 2 + d2 + lsp + a2 + gap + cap + lead);	/* PAST's */
 	CTLineDraw (l0, cx);
 	{
 		/* the bitmap context's memory is top row first */
@@ -129,7 +136,7 @@ void title_build (int W, int H, const char *dir)
 		for (y = 0; y < th; y++) memcpy (cov + (size_t) y * tw, p + (size_t) (th - 1 - y) * bpr, (size_t) tw);
 	}
 	CGContextRelease (cx); CGColorSpaceRelease (gs);
-	CFRelease (l0); CFRelease (l1); CFRelease (l2); CFRelease (fb); CFRelease (fr);
+	CFRelease (l0); CFRelease (l1); CFRelease (l2); CFRelease (l3); CFRelease (fb); CFRelease (fr);
 }
 
 void title_save_background (const unsigned char *img, int W)
@@ -191,7 +198,3 @@ int title_info (int *x0, int *y0, int *w, int *h, const unsigned char **coverage
 	*x0 = tx0; *y0 = ty0; *w = tw; *h = th; *coverage = cov;
 	return 1;
 }
-
-/* the layout's measures, over the frame height (web/mktitle: the browser
-   scales a CoreText reference to the frame with these) */
-void title_metrics (double m[4]) { int k; for (k = 0; k < 4; k++) m[k] = met[k]; }

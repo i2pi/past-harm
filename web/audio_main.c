@@ -24,7 +24,7 @@ EM_JS (double, js_audible, (void), { return Module.audibleFrame ? Module.audible
 float audio_get_swing (void);
 int   audio_offline_now (past_snap *out, double *seconds);
 EXPORT float aw_swing (void) { return audio_get_swing (); }
-int  audio_start (int mute, int loop) { (void) mute; (void) loop; return 0; }	/* started by the page, on a click */
+int  audio_start (int mute) { (void) mute; return 0; }	/* started by the page, on a click */
 
 int audio_now (past_snap *out, double *seconds)
 {

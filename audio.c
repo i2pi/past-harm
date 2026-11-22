@@ -33,7 +33,7 @@ static unsigned long	ring_n;			/* snapshots written */
 static pthread_mutex_t	mx = PTHREAD_MUTEX_INITIALIZER;
 static AudioQueueRef	aq;
 #endif
-static int				looping, offline;
+static int				offline;
 static double			spin;
 static uint64_t			t0_ns;			/* wall clock of output frame 0 */
 static unsigned long	out_n, offline_now;
@@ -146,8 +146,7 @@ static void frame (short *l, short *r)
 		float env_sum = 0;
 		if (!past_next (&eng, &pl, &pr))
 		{
-			if (looping) { reset (); t0_ns = now_ns (); past_next (&eng, &pl, &pr); }
-			else { pl = pr = 0; eng.done = 1; }
+			pl = pr = 0; eng.done = 1;
 		}
 		spin += eng.mean_acc;
 		for (j = 0; j < PAST_OSCS; j++)
@@ -259,7 +258,7 @@ static void *null_device (void *arg)
 	return NULL;
 }
 
-int audio_start (int mute, int loop)
+int audio_start (int mute)
 {
 	AudioStreamBasicDescription fmt = { PAST_RATE, kAudioFormatLinearPCM,
 		kLinearPCMFormatFlagIsFloat | kLinearPCMFormatFlagIsPacked, 8, 1, 8, 2, 32, 0 };
@@ -267,7 +266,6 @@ int audio_start (int mute, int loop)
 	int i;
 
 	reset ();
-	looping = loop;
 	t0_ns = now_ns ();
 	if (mute || AudioQueueNewOutput (&fmt, aq_cb, NULL, NULL, NULL, 0, &aq))
 	{
