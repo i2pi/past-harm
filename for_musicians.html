@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAST HARM — for musicians</title>
+<style>
+@font-face { font-family: "D-DIN"; src: url("fonts/D-DIN.otf") format("opentype"); font-weight: 400; }
+@font-face { font-family: "D-DIN"; src: url("fonts/D-DIN-Bold.otf") format("opentype"); font-weight: 700; }
+:root {
+  --bg: #0b0c0e; --panel: #121418; --rule: #23262c;
+  --ink: #dcd8cf; --muted: #8b8f96; --faint: #4a4e55; --staff: #5d626a;
+  --orange: #e0782b; --teal: #3aa7a3; --blue: #2f7de1; --sky: #8fc4ff; --rose: #d4567a; --green: #7cc47f;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.6 "D-DIN", "DIN Alternate", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+main { max-width: 900px; margin: 0 auto; padding: 0 20px 120px; }
+header.title { padding: 96px 0 44px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+header.title h1 { font-size: 88px; line-height: .86; margin: 0; font-weight: 700; letter-spacing: .02em; }
+header.title .sub { margin-top: 18px; color: var(--muted); font-size: 15px; letter-spacing: .04em; }
+header.title p.lede { margin-top: 32px; font-size: 20px; max-width: 700px; }
+h2 { font-size: 30px; margin: 76px 0 8px; font-weight: 700; }
+h2 .n { color: var(--orange); margin-right: 12px; }
+h3 { font-size: 20px; margin: 36px 0 6px; font-weight: 700; }
+p { margin: 12px 0; }
+a { color: var(--sky); }
+em { color: #fff; font-style: normal; border-bottom: 1px solid var(--faint); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 16px 0; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { color: var(--muted); font-weight: 400; }
+figure { margin: 22px 0; }
+figure.score { background: var(--panel); border: 1px solid var(--rule); padding: 12px 10px 8px; overflow-x: auto; }
+figure.score svg { display: block; width: 100%; min-width: 640px; height: auto; }
+figure figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; padding: 0 4px; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--muted); margin: 10px 0 4px; }
+.key span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+.box { background: var(--panel); border-left: 2px solid var(--orange); padding: 12px 16px; margin: 18px 0; font-size: 16px; }
+.note { color: var(--muted); font-size: 15px; }
+nav.toc { columns: 2; column-gap: 32px; font-size: 15px; }
+nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 2px 0; }
+svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+@media (max-width: 640px) {
+  body { font-size: 16px; } header.title h1 { font-size: 60px; } nav.toc { columns: 1; } h2 { font-size: 25px; }
+}
+</style>
+</head>
+<body>
+<main>
+<header class="title">
+  <h1>PAST<br>HARM</h1>
+  <div class="sub">for musicians · melody, harmony, rhythm, timbre, effects</div>
+  <p class="lede">Nobody plays this piece. A set of rules, running on a sample clock, decides every note. The scores
+  on this page are <em>transcriptions</em>: what the program actually played, logged note by note from the engine
+  and written out. Each section explains a rule and shows it at work in real bars of the piece.</p>
+</header>
+
+<nav class="toc">
+  <a href="#reading">0 · Reading these scores</a>
+  <a href="#melody">1 · Melody: a row that permutes</a>
+  <a href="#harmony">2 · Harmony: keys, masks and snapping</a>
+  <a href="#rhythm">3 · Rhythm: coprime streams</a>
+  <a href="#mutation">4 · Rhythm that mutates</a>
+  <a href="#timbre">5 · Timbre</a>
+  <a href="#effects">6 · Effects as instruments</a>
+  <a href="#form">7 · Form</a>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="reading"><span class="n">0</span>Reading these scores</h2>
+<p><b>Pulse.</b> Everything sits on a grid of 8192 samples at 44.1 kHz, 0.186 s. Sixteen of these make a bar.
+Read the grid as sixteenth notes in 4/4 and the tempo is <em>♩ ≈ 80.7</em>. Bar numbers and clock times are
+marked above each system.</p>
+<p><b>Tuning.</b> past's note 0 is 140.06 Hz: 880 Hz × 2<sup>n/12</sup>, divided by 2π, because the 2003 code
+advances its phase in radians without the 2π. That is a C♯3 about <em>18 cents sharp</em>, and the whole piece is
+in equal temperament at that offset. Every note below is written at the nearest equal-tempered pitch: read
+"C♯" as C♯ +18 cents.</p>
+<p><b>Notation.</b> The scores are in <em>time-space notation</em>: a note's horizontal position is proportional to
+when it starts, and a line from the notehead shows how long it actually sounds (its envelope, including the
+release). There are no key signatures, so each accidental applies to its own note only. Dynamics are shown as
+opacity.</p>
+<div class="key">
+  <span style="--c:var(--ink)">past's melody (three voices on one pitch)</span>
+  <span style="--c:var(--sky)">past's low figures</span>
+  <span style="--c:var(--teal)">choir (past's long notes, sung)</span>
+  <span style="--c:var(--orange)">solo choir voice</span>
+  <span style="--c:var(--rose)">a note the harmony moved</span>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="melody"><span class="n">1</span>Melody: a row that permutes</h2>
+<p>past composes from three short <em>rows</em>, nine semitone offsets each. The main row starts as
+<code>0 3 0 5 0 1 7 4 5</code>. A counter <i>n</i> steps through it. The melody plays row[<i>n</i>], an octave up,
+over and over on the sixteenth grid, and only moves on when the bass moves (each bass event advances <i>n</i>). The
+melody is therefore a <em>repeated-note pulse</em> whose pitch is set by the bass.</p>
+<p>Meanwhile the rows are being shuffled. past has its own clock, the <em>tick</em>, and on it three permutations run:
+every 17 ticks two neighbouring notes of the main row swap; every 19 ticks a note is exchanged with the third row; every
+23 ticks the second and third rows trade a note, transposed by <code>12 − row[j] mod 6</code>. 17, 19 and 23 are
+primes, so the three processes only line up again after 7,429 ticks. The row keeps its notes but changes its order,
+and the melody wanders through permutations of the same small set of pitches.</p>
+<figure class="score"><svg id="sc-rows"></svg>
+<figcaption>The main row (written as the melody plays it, an octave up) at six moments in the first eight minutes, taken from the engine's log. The pitches stay the same while their order drifts.</figcaption></figure>
+
+<h3>Three voices on one pitch</h3>
+<p>The melody is three voices playing the same note, each placed differently against the grid:</p>
+<table>
+<tr><th>voice</th><th>where</th><th>when it plays</th><th>dynamics</th></tr>
+<tr><td>A</td><td>on the sixteenth</td><td>first 20 s of each minute, in phrases of 26 ticks on, 13 off</td><td>swells and fades every ~18 s</td></tr>
+<tr><td>B</td><td>23 ms late (1/8 of a sixteenth): a flam</td><td>minutes 0–3 of each eight, phrases of 34 on, 17 off</td><td>softer, wavering every ~2 s</td></tr>
+<tr><td>C</td><td>23–46 ms late, the offset cycling through 17 positions with the tick</td><td>first 45 s of each minute</td><td>its own swell, every ~3 s</td></tr>
+</table>
+<p>B and C sit just behind A, like a player doubling a part slightly late. The gap between them changes from tick to
+tick, so the attack smears and sharpens. In the polyrhythm sections the short notes are also <em>accented</em> in
+groups of three sixteenths (3+3+3+3+4): notes off those accents are halved in level.</p>
+
+<h3>The opening, as played</h3>
+<p>The first eight bars. The <em>mood</em> starts dark: past's melody is dropped an octave, the harmony is held
+to C♯ Phrygian, and a single choir voice sings a slow lament around the root, one note every two bars
+(root, ♭2, root, ♭7 below, root, ♭2, ♭6 below, root).</p>
+<figure class="score"><svg id="sc-opening"></svg>
+<figcaption>Bars 1–8 (0:00–0:24), as the engine played them. The orange notes are the solo lament; each lasts about 5½ s, swelling for ~1.4 s.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="harmony"><span class="n">2</span>Harmony: keys, masks and snapping</h2>
+<p>past's rows don't belong to a key. They are interval sets, and with up to sixteen voices sounding, dense passages
+can pile up semitones and tritones. The piece keeps past's choices but moves each new note into the current key.</p>
+<h3>Hearing the key</h3>
+<p>About every 12 ms the program counts which pitch classes are in the rows and sounding, weighted by loudness, and
+correlates that count with the Krumhansl–Kessler key profiles. These come from listening experiments and describe how
+strongly each scale degree belongs to a key. The best of the 24 major and minor keys wins, but only if it keeps winning
+for about four seconds, so the key moves the way a modulation does, not note by note. In the first eight minutes it
+settles mostly on C♯ minor and E major, with excursions to D minor, F minor, D♯ minor, A, B and G♯ major.</p>
+<h3>Masks</h3>
+<p>Each new note moves to the nearest pitch of a <em>mask</em> on the key, rounding ties down. Which mask depends on
+how full the music is:</p>
+<figure class="score"><svg id="sc-masks"></svg>
+<figcaption>The masks, on C♯. With fewer than four voices sounding: the full major or natural minor scale. With four or more: only the pentatonic, which has no semitone or tritone between any two notes, so a dense chord cannot clash. During the dark opening: Phrygian, then the Japanese <i>in</i> scale (root, ♭2, 4, 5, ♭6).</figcaption></figure>
+<h3>What past wrote, and what you hear</h3>
+<p>The same two bars, from a run with the harmony switched off (top) and on (bottom). The timing is identical; only the
+pitches move. Across the first eight minutes the harmony moves <span id="n-changed"></span> of
+<span id="n-total"></span> notes. Nine in ten move by a semitone, usually down; the rest by a whole tone down.</p>
+<figure class="score"><svg id="sc-raw"></svg>
+<figcaption>Bars 70–71 (3:25–3:31), key E major, many voices sounding, so the pentatonic mask is on. Top: past's own pitches. Bottom: as heard; the moved notes are in rose.</figcaption></figure>
+<h3>The bass pairs and the choir</h3>
+<p>past's bass moves in <em>pairs</em>: row[<i>n</i>] and row[<i>n</i>+2] together, two octaves below the melody, on a
+16-tick cycle at ticks 3, 7, 9 and 12. That gives the uneven rhythm 4 + 2 + 3 + 7. Each note has a six-second
+release, so pairs overlap into chords. From the first minute these long notes are given to a choir. They don't
+sound at once: each waits for the next beat of the bar's <em>three</em>, so the choir's chords land in half-note
+triplets against past's sixteenths.</p>
+<figure class="score"><svg id="sc-entrance"></svg>
+<figcaption>Bars 21–28 (0:59–1:22): the choir enters. Its chords (teal) arrive on the bar's three beats; past's melody and low figures carry on beneath.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="rhythm"><span class="n">3</span>Rhythm: coprime streams</h2>
+<p>Every rhythm in the piece divides the same bar. Two pulses that divide a bar into <i>a</i> and <i>b</i> beats meet
+every 1/gcd(<i>a</i>,<i>b</i>) of the bar. If <i>a</i> and <i>b</i> are <em>coprime</em> (no common factor) they
+meet only on the downbeat. Every other onset of one falls somewhere new against the other, and the ear hears two
+streams rather than one composite pattern. The piece runs several such streams together. Each musical stream has a
+<em>guide drum</em> doubling it: the drum plays at full level for four bars while the stream is new, then drops to a
+light doubling, and the music itself carries the rhythm.</p>
+<table>
+<tr><th>stream</th><th>per bar</th><th>in the music</th><th>guide drum, tuned to</th></tr>
+<tr><td>choir</td><td>3</td><td>the choir's chords wait for these beats; the choir breathes on each</td><td>log drum, the fifth</td></tr>
+<tr><td>past's accents</td><td>3+3+3+3+4 sixteenths</td><td>accents on past's short notes</td><td>rim, the root</td></tr>
+<tr><td>left echoes</td><td>5</td><td>harm's left delays sit on fifths of the bar</td><td>FM bell, chord tones</td></tr>
+<tr><td>right echoes</td><td>7</td><td>harm's right delays on sevenths</td><td>tick, the ninth</td></tr>
+<tr><td>harm's high tick</td><td>11 against 8</td><td>a tick in 11, heard only where it falls in the first 30% of an eighth-note</td><td>the fifth, high</td></tr>
+<tr><td>harm's thump</td><td>1</td><td>every downbeat, the root, deep</td><td>—</td></tr>
+</table>
+<p>The drums come in with the arc of the piece, so the texture thickens one stream at a time: 3, then the rim, then
+the bell's 5, then the 7 near the top of each swell.</p>
+<figure class="score"><svg id="sc-drums"></svg>
+<figcaption>Bars 73–74 (3:34–3:40), all layers playing, from the engine's log; harm's thump, blip and tick are computed from its rules. Dot size is the level. Everything meets only at the bar line.</figcaption></figure>
+<h3>past's other clock</h3>
+<p>past's <em>tick</em>, which moves the bass and shuffles the rows, does not run on the sixteenth grid at all. It starts
+at 26,384 samples, 3.22 sixteenths, and gets 30 samples shorter every minute. So the bass and its choir drift against the
+grid and the drums, a polytempo inside the piece. In the endless version this goes on for about ten hours, until the
+tick shrinks to exactly one sixteenth and locks to the grid.</p>
+<figure class="score"><svg id="sc-tick"></svg>
+<figcaption>The length of past's tick, in sixteenths, over the first twelve hours.</figcaption></figure>
+<h3>The minute as a form</h3>
+<p>past was written as an eight-minute piece, and its figures are switched on and off by the clock, giving each
+minute and each eight-minute section an internal shape:</p>
+<figure class="score"><svg id="sc-minute"></svg>
+<figcaption>Which of past's figures play when, over one eight-minute section (the pattern repeats in the endless version).</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="mutation"><span class="n">4</span>Rhythm that mutates</h2>
+<p>In the endless version the divisions are not fixed. About every seven minutes (randomly six to eight), on a
+downbeat, one of them changes to a new value that is still coprime with the others. Possible values:</p>
+<table>
+<tr><th>stream</th><th>starts</th><th>can become</th></tr>
+<tr><td>choir beat</td><td>3</td><td>3, 4, 5, 7</td></tr>
+<tr><td>past's accents</td><td>groups of 3</td><td>3 (3+3+3+3+4), 5 (5+5+6), 7 (7+9)</td></tr>
+<tr><td>left echoes</td><td>5</td><td>3, 5, 7, 9, 11</td></tr>
+<tr><td>right echoes</td><td>7</td><td>5, 7, 9, 11, 13</td></tr>
+<tr><td>harm's high tick</td><td>11</td><td>9, 11, 13</td></tr>
+</table>
+<p>When a stream changes, its guide drum comes back to full for four bars so the ear finds the new rhythm. When an
+echo grid changes, the delays slide to their new lengths over 10–40 s instead of jumping, like tape slowing, and the
+echoes bend in pitch by up to 17 cents on the way.</p>
+<figure class="score"><svg id="sc-mut"></svg>
+<figcaption>The first two mutations of the first hour: at 6:59 the right echoes go from 7 to 13 per bar; at 14:33 past's accents go from groups of 3 to 7 + 9.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="timbre"><span class="n">5</span>Timbre</h2>
+<h3>past's voices</h3>
+<p>A past voice is not a single tone. Its odd partials run at a quarter of the note's frequency and its even partials
+at whole multiples, so every voice is a <em>harmonic series built two octaves below the written note</em>. It contains
+harmonics 1, 3, 5 and 7 of that low fundamental, then 8, 16 and 24, which are the written note and its octaves. The 5th
+and 7th harmonics are untempered: 14 and 31 cents flat of equal temperament. How many partials a voice has depends on
+which of the sixteen voice slots it is in (2 to 8), and they are weighted linearly down.</p>
+<p>The odd partials also pass through an arctangent waveshaper whose drive is itself a slow sine (about 45 s). At low
+drive they are soft sines; at full drive the shaper squares them off and fills them with more odd harmonics. Every
+voice slowly breathes between pure and buzzy.</p>
+<figure class="score"><svg id="sc-spectrum"></svg>
+<figcaption>The spectrum of one past voice (slot 6, eight partials) playing C♯4. Teal: the waveshaped odd harmonics (1, 3, 5, 7 of a fundamental two octaves down). Ink: the plain even partials. Numbers are the harmonic number and its deviation in cents from the piece's equal temperament; ring size is the weight.</figcaption></figure>
+<h3>The choir</h3>
+<p>The choir is built the way a real choir sounds: many voices, each slightly off pitch. Each harmonic of a
+sawtooth-like spectrum is spread into a band about 45 cents wide (wider for higher harmonics) with every frequency in
+the band at a random phase. Played back, this is a seamless ensemble that never beats regularly. The solo voice of the
+opening uses narrower bands, 12 cents, so it sounds like one singer. Three vowel formants drift between "ah" and "oh"
+with past's own slow cycles.</p>
+<p>The choir's <em>richness</em> rises and falls over five minutes. At its thinnest the ensemble narrows towards mono.
+At its richest a second rank sings an octave up and a third a fifth up, like adding 4′ and 2⅔′ stops to an organ.</p>
+<h3>The bass</h3>
+<p>Under the choir a sub-bass follows the lowest choir note, folded into 20–50 Hz: a pure fundamental plus three
+voices at −6, 0 and +6 cents, each with its 2nd and 3rd harmonics, so the low end beats slowly. Its weight swells over
+nine minutes, from a thin, dark sine to a driven, harmonically full bass.</p>
+<h3>The drums are tuned</h3>
+<p>Every drum takes its pitch from the current key, so the percussion is part of the harmony. The bell moves through
+chord tones (third, fifth, octave, fifth, root), rotating with the four-bar phrase, and holds to the third and fifth
+until the piece is near its fullest.</p>
+<figure class="score"><svg id="sc-drumpitch"></svg>
+<figcaption>The pitched drums in C♯ minor (the deep thump is written an octave up). The high tick (the 9th, around 2.4–4.8 kHz) is off the staff.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="effects"><span class="n">6</span>Effects as instruments</h2>
+<h3>Echoes that play rhythms</h3>
+<p>harm's delay networks (2003) are kept, but their delay times are set to fractions of the bar. A note played on
+the downbeat comes back as a rhythm: fifths of the bar on the left, sevenths on the right. The echoes feed back into
+the networks, so they echo again, and the delay gains swell and fade on their own slow cycles. In effect the echoes
+are two more players, in 5 and in 7, improvising on whatever past plays.</p>
+<figure class="score"><svg id="sc-echo"></svg>
+<figcaption>One note on the downbeat and its first echoes. Left (orange): ¼, ½, 1, 1½ and 1¾ fifths of a bar. Right (teal): ½, 1 and 2 sevenths. None lands on a sixteenth except the downbeat itself.</figcaption></figure>
+<h3>A reverb that fills the silence</h3>
+<p>The reverb listens to how many notes are sounding. When past is busy the reverb is small, about 2 s and mostly dry.
+When the music thins it swells: up to 7.5 s and mostly wet, so the space fills in exactly where the notes leave it. The
+rests are never empty.</p>
+<h3>The dark filter</h3>
+<p>During the opening the whole mix passes through a low-pass filter starting at 900 Hz, which opens fully over
+three minutes as the mood lifts.</p>
+
+<!-- ============================================================ -->
+<h2 id="form"><span class="n">7</span>Form</h2>
+<p>Several slow cycles shape the piece, none of them in step with the others:</p>
+<table>
+<tr><th>cycle</th><th>period</th><th>what it shapes</th></tr>
+<tr><td>the arc of voices</td><td>150 s, its height varying over 330 s</td><td>how many voices may sound at once (2 to 16), and which drums play</td></tr>
+<tr><td>the mood</td><td>once, 0:20 to 3:20</td><td>from dark (Phrygian, low, filtered, solo lament) to open</td></tr>
+<tr><td>past's sections</td><td>8 min</td><td>which figures play (above)</td></tr>
+<tr><td>choir richness</td><td>5 min</td><td>ensemble width, extra ranks</td></tr>
+<tr><td>bass weight</td><td>9 min</td><td>the sub-bass, thin to full</td></tr>
+<tr><td>rhythm mutation</td><td>~7 min, random</td><td>one coprime division changes</td></tr>
+<tr><td>past's tick</td><td>shortens for ~10 h</td><td>the bass's tempo against the grid</td></tr>
+</table>
+<p>Five- and nine-minute cycles line up only every 45 minutes; with the eight-minute sections, every six hours. The
+random mutations mean that even then the music is in a different state. The piece is deterministic, the same every
+time from the start, but it never repeats.</p>
+<figure class="score"><svg id="sc-arc"></svg>
+<figcaption>The first ten minutes: how many voices may sound (orange) and the mood (teal).</figcaption></figure>
+
+<p class="note" style="margin-top:56px">past's rows, voices, timing and minute form are Joshua Reich's 2003 code; harm's
+delay networks and drums are his 2003 code; the harmony (key finding, masks), choir, bass, guide drums, mutations, reverb
+and the re-timing of harm were added in 2026, with Claude. The scores are generated from the engine itself by
+<code>tools/mkmusicians.py</code>. For the mathematics and code, see the <a href="technical_statement.html">technical statement</a>.</p>
+</main>
+
+<script>
+const DATA = {"opening":{"bar0":0,"bars":8,"key":0,"minor":0,"arc":[0.0,0.003,0.012,0.028,0.049,0.075,0.107,0.144],"mood":0.0,"notes":[{"x":0.0,"len":34.99,"m":49,"k":"solo","v":0.5,"note":-12},{"x":0.133,"len":1.39,"m":61,"k":"melody","v":0.68,"note":0},{"x":2.133,"len":0.59,"m":61,"k":"melody","v":0.2,"note":0},{"x":3.133,"len":0.8,"m":61,"k":"melody","v":0.3,"note":0},{"x":4.141,"len":0.5,"m":61,"k":"melody","v":0.13,"note":0},{"x":5.141,"len":0.5,"m":61,"k":"melody","v":0.13,"note":0},{"x":6.141,"len":0.83,"m":61,"k":"melody","v":0.32,"note":0},{"x":7.148,"len":0.61,"m":61,"k":"melody","v":0.21,"note":0},{"x":8.148,"len":0.7,"m":61,"k":"melody","v":0.28,"note":0},{"x":9.148,"len":1.45,"m":61,"k":"melody","v":0.72,"note":0},{"x":11.156,"len":0.99,"m":61,"k":"melody","v":0.5,"note":0},{"x":12.156,"len":2.04,"m":61,"k":"melody","v":1.0,"note":0},{"x":14.164,"len":1.08,"m":49,"k":"melody","v":0.57,"note":0},{"x":15.164,"len":1.04,"m":61,"k":"melody","v":0.54,"note":0},{"x":16.172,"len":1.84,"m":49,"k":"melody","v":0.97,"note":0},{"x":18.172,"len":0.77,"m":61,"k":"melody","v":0.34,"note":0},{"x":19.172,"len":1.14,"m":61,"k":"melody","v":0.52,"note":0},{"x":20.18,"len":0.59,"m":49,"k":"melody","v":0.2,"note":0},{"x":21.18,"len":0.53,"m":61,"k":"melody","v":0.15,"note":0},{"x":22.18,"len":0.72,"m":61,"k":"melody","v":0.25,"note":0},{"x":23.188,"len":0.5,"m":61,"k":"melody","v":0.13,"note":0},{"x":24.188,"len":0.54,"m":61,"k":"melody","v":0.16,"note":0},{"x":25.188,"len":1.0,"m":61,"k":"melody","v":0.43,"note":0},{"x":26.195,"len":0.7,"m":61,"k":"melody","v":0.28,"note":0},{"x":27.195,"len":0.8,"m":61,"k":"melody","v":0.36,"note":0},{"x":28.195,"len":1.69,"m":61,"k":"melody","v":0.88,"note":0},{"x":30.203,"len":1.05,"m":61,"k":"melody","v":0.55,"note":0},{"x":31.203,"len":1.08,"m":49,"k":"melody","v":0.57,"note":0},{"x":32.0,"len":34.99,"m":50,"k":"solo","v":0.5,"note":-11},{"x":32.203,"len":2.1,"m":61,"k":"melody","v":1.0,"note":0},{"x":34.211,"len":0.97,"m":49,"k":"melody","v":0.48,"note":0},{"x":35.211,"len":1.62,"m":49,"k":"melody","v":0.83,"note":0},{"x":37.219,"len":0.68,"m":49,"k":"melody","v":0.26,"note":0},{"x":38.219,"len":0.94,"m":49,"k":"melody","v":0.39,"note":0},{"x":39.0,"len":0.71,"m":49,"k":"melody","v":0.37,"note":0},{"x":40.0,"len":0.74,"m":49,"k":"melody","v":0.38,"note":0},{"x":41.0,"len":1.48,"m":49,"k":"melody","v":0.8,"note":0},{"x":42.234,"len":0.54,"m":49,"k":"melody","v":0.16,"note":0},{"x":43.0,"len":0.82,"m":49,"k":"melody","v":0.43,"note":0},{"x":44.0,"len":1.65,"m":49,"k":"melody","v":0.89,"note":0},{"x":46.0,"len":0.91,"m":49,"k":"melody","v":0.48,"note":0},{"x":47.0,"len":0.94,"m":49,"k":"melody","v":0.49,"note":0},{"x":48.0,"len":1.89,"m":49,"k":"melody","v":1.0,"note":0},{"x":50.0,"len":1.03,"m":49,"k":"melody","v":0.54,"note":0},{"x":51.0,"len":2.06,"m":49,"k":"melody","v":1.0,"note":0},{"x":53.0,"len":1.11,"m":49,"k":"melody","v":0.59,"note":0},{"x":54.0,"len":2.23,"m":49,"k":"melody","v":1.0,"note":0},{"x":54.75,"len":40.64,"m":28,"k":"low","v":1.0,"note":-21},{"x":56.0,"len":1.2,"m":61,"k":"melody","v":0.64,"note":0},{"x":57.0,"len":2.38,"m":49,"k":"melody","v":1.0,"note":0},{"x":59.125,"len":0.72,"m":61,"k":"melody","v":0.37,"note":0},{"x":60.0,"len":2.52,"m":49,"k":"melody","v":1.0,"note":0},{"x":63.0,"len":1.34,"m":49,"k":"melody","v":0.71,"note":0},{"x":64.0,"len":34.99,"m":49,"k":"solo","v":0.5,"note":-12},{"x":64.125,"len":0.53,"m":49,"k":"melody","v":0.27,"note":0},{"x":65.0,"len":1.36,"m":49,"k":"melody","v":0.73,"note":0},{"x":66.125,"len":0.36,"m":49,"k":"melody","v":0.17,"note":0},{"x":67.0,"len":2.71,"m":61,"k":"melody","v":1.0,"note":0},{"x":70.0,"len":2.74,"m":61,"k":"melody","v":1.0,"note":0},{"x":73.0,"len":2.74,"m":61,"k":"melody","v":1.0,"note":0},{"x":76.0,"len":2.7,"m":61,"k":"melody","v":1.0,"note":0},{"x":79.0,"len":1.34,"m":61,"k":"melody","v":0.72,"note":0},{"x":80.125,"len":1.4,"m":49,"k":"melody","v":0.75,"note":0},{"x":82.0,"len":1.29,"m":61,"k":"melody","v":0.69,"note":0},{"x":83.125,"len":0.87,"m":49,"k":"melody","v":0.45,"note":0},{"x":84.0,"len":1.24,"m":61,"k":"melody","v":0.66,"note":0},{"x":85.0,"len":1.22,"m":49,"k":"melody","v":0.65,"note":0},{"x":86.0,"len":2.34,"m":61,"k":"melody","v":1.0,"note":0},{"x":88.125,"len":0.52,"m":49,"k":"melody","v":0.26,"note":0},{"x":89.0,"len":2.18,"m":61,"k":"melody","v":1.0,"note":0},{"x":89.211,"len":1.64,"m":49,"k":"melody","v":0.84,"note":0},{"x":91.0,"len":1.06,"m":49,"k":"melody","v":0.56,"note":0},{"x":91.125,"len":0.71,"m":49,"k":"melody","v":0.37,"note":0},{"x":92.0,"len":2.01,"m":61,"k":"melody","v":1.0,"note":0},{"x":92.125,"len":1.22,"m":49,"k":"melody","v":0.65,"note":0},{"x":93.125,"len":0.51,"m":49,"k":"melody","v":0.25,"note":0},{"x":94.0,"len":0.97,"m":49,"k":"melody","v":0.51,"note":0},{"x":94.125,"len":0.38,"m":61,"k":"melody","v":0.18,"note":0},{"x":95.0,"len":0.94,"m":61,"k":"melody","v":0.49,"note":0},{"x":95.125,"len":0.29,"m":49,"k":"melody","v":0.13,"note":0},{"x":95.227,"len":0.5,"m":49,"k":"melody","v":0.13,"note":0},{"x":96.0,"len":1.77,"m":49,"k":"melody","v":0.96,"note":0},{"x":96.0,"len":34.99,"m":47,"k":"solo","v":0.5,"note":-14},{"x":96.125,"len":0.51,"m":49,"k":"melody","v":0.26,"note":0},{"x":96.227,"len":0.82,"m":49,"k":"melody","v":0.32,"note":0},{"x":97.0,"len":0.88,"m":49,"k":"melody","v":0.46,"note":0},{"x":97.125,"len":0.35,"m":49,"k":"melody","v":0.17,"note":0},{"x":97.234,"len":0.6,"m":61,"k":"melody","v":0.21,"note":0},{"x":98.0,"len":0.85,"m":49,"k":"melody","v":0.45,"note":0},{"x":98.125,"len":0.47,"m":49,"k":"melody","v":0.23,"note":0},{"x":98.234,"len":0.69,"m":49,"k":"melody","v":0.28,"note":0},{"x":99.0,"len":1.6,"m":49,"k":"melody","v":0.86,"note":0},{"x":99.125,"len":1.16,"m":49,"k":"melody","v":0.61,"note":0},{"x":99.234,"len":1.44,"m":61,"k":"melody","v":0.72,"note":0},{"x":100.125,"len":0.7,"m":49,"k":"melody","v":0.36,"note":0},{"x":101.0,"len":0.77,"m":49,"k":"melody","v":0.4,"note":0},{"x":101.125,"len":0.72,"m":49,"k":"melody","v":0.37,"note":0},{"x":101.242,"len":0.98,"m":61,"k":"melody","v":0.5,"note":0},{"x":102.0,"len":1.43,"m":49,"k":"melody","v":0.77,"note":0},{"x":102.125,"len":1.29,"m":49,"k":"melody","v":0.69,"note":0},{"x":102.242,"len":2.04,"m":61,"k":"melody","v":1.0,"note":0},{"x":103.25,"len":1.08,"m":49,"k":"melody","v":0.57,"note":0},{"x":104.0,"len":0.69,"m":49,"k":"melody","v":0.36,"note":0},{"x":104.125,"len":0.42,"m":49,"k":"melody","v":0.2,"note":0},{"x":104.25,"len":1.08,"m":61,"k":"melody","v":0.57,"note":0},{"x":105.0,"len":1.28,"m":49,"k":"melody","v":0.69,"note":0},{"x":105.125,"len":0.58,"m":49,"k":"melody","v":0.29,"note":0},{"x":105.25,"len":2.01,"m":61,"k":"melody","v":1.0,"note":0},{"x":106.0,"len":0.65,"m":49,"k":"melody","v":0.33,"note":0},{"x":106.125,"len":0.28,"m":49,"k":"melody","v":0.12,"note":0},{"x":106.25,"len":0.98,"m":61,"k":"melody","v":0.49,"note":0},{"x":107.0,"len":0.62,"m":49,"k":"melody","v":0.32,"note":0},{"x":107.125,"len":0.32,"m":49,"k":"melody","v":0.15,"note":0},{"x":107.125,"len":0.9,"m":49,"k":"melody","v":0.43,"note":0},{"x":108.125,"len":0.8,"m":49,"k":"melody","v":0.41,"note":0},{"x":108.125,"len":1.43,"m":49,"k":"melody","v":0.7,"note":0},{"x":109.125,"len":0.56,"m":49,"k":"melody","v":0.28,"note":0},{"x":109.125,"len":0.7,"m":61,"k":"melody","v":0.27,"note":0},{"x":110.125,"len":0.67,"m":49,"k":"melody","v":0.34,"note":0},{"x":110.133,"len":0.6,"m":49,"k":"melody","v":0.2,"note":0},{"x":111.125,"len":0.72,"m":49,"k":"melody","v":0.37,"note":0},{"x":111.133,"len":0.54,"m":49,"k":"melody","v":0.15,"note":0},{"x":112.125,"len":1.34,"m":49,"k":"melody","v":0.72,"note":0},{"x":112.133,"len":0.73,"m":49,"k":"melody","v":0.26,"note":0},{"x":113.125,"len":0.6,"m":49,"k":"melody","v":0.3,"note":0},{"x":113.141,"len":0.49,"m":61,"k":"melody","v":0.13,"note":0},{"x":114.125,"len":0.47,"m":49,"k":"melody","v":0.23,"note":0},{"x":114.141,"len":0.53,"m":49,"k":"melody","v":0.15,"note":0},{"x":115.125,"len":0.64,"m":49,"k":"melody","v":0.33,"note":0},{"x":115.141,"len":0.96,"m":49,"k":"melody","v":0.41,"note":0},{"x":116.125,"len":0.28,"m":49,"k":"melody","v":0.13,"note":0},{"x":116.148,"len":0.68,"m":49,"k":"melody","v":0.27,"note":0},{"x":117.125,"len":0.3,"m":49,"k":"melody","v":0.14,"note":0},{"x":117.148,"len":0.78,"m":49,"k":"melody","v":0.35,"note":0},{"x":118.125,"len":0.71,"m":49,"k":"melody","v":0.37,"note":0},{"x":118.148,"len":1.65,"m":49,"k":"melody","v":0.85,"note":0},{"x":119.125,"len":0.51,"m":49,"k":"melody","v":0.26,"note":0},{"x":119.148,"len":0.97,"m":61,"k":"melody","v":0.49,"note":0},{"x":120.125,"len":0.64,"m":49,"k":"melody","v":0.33,"note":0},{"x":120.156,"len":1.04,"m":49,"k":"melody","v":0.55,"note":0},{"x":121.125,"len":1.38,"m":49,"k":"melody","v":0.74,"note":0},{"x":121.156,"len":2.1,"m":61,"k":"melody","v":1.0,"note":0},{"x":122.125,"len":0.72,"m":49,"k":"melody","v":0.37,"note":0},{"x":122.382,"len":2.81,"m":28,"k":"low","v":0.5,"note":-21},{"x":123.125,"len":0.64,"m":49,"k":"melody","v":0.33,"note":0},{"x":123.164,"len":1.05,"m":49,"k":"melody","v":0.54,"note":0},{"x":124.125,"len":0.98,"m":49,"k":"melody","v":0.52,"note":0},{"x":124.164,"len":1.88,"m":61,"k":"melody","v":0.99,"note":0},{"x":125.125,"len":0.39,"m":49,"k":"melody","v":0.18,"note":0},{"x":125.164,"len":0.9,"m":49,"k":"melody","v":0.43,"note":0},{"x":126.125,"len":0.3,"m":49,"k":"melody","v":0.14,"note":0},{"x":126.172,"len":0.8,"m":49,"k":"melody","v":0.35,"note":0},{"x":127.125,"len":0.28,"m":49,"k":"melody","v":0.13,"note":0},{"x":127.172,"len":0.7,"m":49,"k":"melody","v":0.27,"note":0}],"drums":[],"genes":[3,3,5,7,11]},"entrance":{"bar0":20,"bars":8,"key":0,"minor":1,"arc":[0.77,0.804,0.833,0.857,0.874,0.884,0.888,0.885],"mood":0.123,"notes":[{"x":0.125,"len":1.16,"m":61,"k":"melody","v":0.61,"note":0},{"x":1.125,"len":0.47,"m":49,"k":"melody","v":0.23,"note":0},{"x":2.125,"len":0.35,"m":61,"k":"melody","v":0.17,"note":0},{"x":3.0,"len":1.37,"m":49,"k":"melody","v":0.73,"note":0},{"x":3.125,"len":0.52,"m":61,"k":"melody","v":0.26,"note":0},{"x":3.25,"len":1.72,"m":49,"k":"melody","v":0.88,"note":0},{"x":4.0,"len":0.74,"m":61,"k":"melody","v":0.38,"note":0},{"x":4.125,"len":0.29,"m":61,"k":"melody","v":0.13,"note":0},{"x":4.25,"len":0.83,"m":49,"k":"melody","v":0.36,"note":0},{"x":5.0,"len":0.76,"m":49,"k":"melody","v":0.4,"note":0},{"x":5.125,"len":0.74,"m":61,"k":"melody","v":0.29,"note":0},{"x":6.0,"len":1.53,"m":49,"k":"melody","v":0.82,"note":0},{"x":6.125,"len":1.04,"m":61,"k":"melody","v":0.45,"note":0},{"x":7.0,"len":0.82,"m":49,"k":"melody","v":0.43,"note":0},{"x":7.125,"len":0.56,"m":61,"k":"melody","v":0.17,"note":0},{"x":8.0,"len":0.85,"m":49,"k":"melody","v":0.44,"note":0},{"x":8.125,"len":0.51,"m":61,"k":"melody","v":0.13,"note":0},{"x":9.0,"len":1.7,"m":52,"k":"melody","v":0.92,"note":3},{"x":9.133,"len":0.71,"m":64,"k":"melody","v":0.25,"note":3},{"x":10.0,"len":0.91,"m":64,"k":"melody","v":0.47,"note":3},{"x":10.133,"len":0.5,"m":52,"k":"melody","v":0.14,"note":3},{"x":10.667,"len":31.65,"m":52,"k":"choir","v":0.84,"note":-9},{"x":10.667,"len":31.65,"m":61,"k":"choir","v":0.84,"note":-12},{"x":11.0,"len":0.93,"m":52,"k":"melody","v":0.49,"note":3},{"x":11.133,"len":0.56,"m":64,"k":"melody","v":0.19,"note":3},{"x":12.0,"len":1.88,"m":52,"k":"melody","v":1.0,"note":3},{"x":12.141,"len":1.09,"m":64,"k":"melody","v":0.51,"note":3},{"x":13.0,"len":0.99,"m":50,"k":"melody","v":0.52,"note":1},{"x":13.141,"len":0.74,"m":62,"k":"melody","v":0.33,"note":1},{"x":14.0,"len":1.02,"m":52,"k":"melody","v":0.54,"note":3},{"x":14.141,"len":0.84,"m":64,"k":"melody","v":0.41,"note":3},{"x":15.0,"len":1.05,"m":68,"k":"melody","v":0.56,"note":7},{"x":15.148,"len":0.94,"m":56,"k":"melody","v":0.48,"note":7},{"x":16.0,"len":2.11,"m":56,"k":"melody","v":1.0,"note":7},{"x":16.0,"len":29.64,"m":68,"k":"choir","v":0.78,"note":-5},{"x":16.0,"len":29.64,"m":52,"k":"choir","v":0.78,"note":-9},{"x":16.148,"len":1.98,"m":56,"k":"melody","v":1.0,"note":7},{"x":17.0,"len":1.11,"m":68,"k":"melody","v":0.59,"note":7},{"x":17.148,"len":1.07,"m":68,"k":"melody","v":0.57,"note":7},{"x":18.0,"len":1.14,"m":56,"k":"melody","v":0.6,"note":7},{"x":18.156,"len":1.09,"m":56,"k":"melody","v":0.57,"note":7},{"x":19.0,"len":2.28,"m":68,"k":"melody","v":1.0,"note":7},{"x":19.156,"len":2.07,"m":56,"k":"melody","v":1.0,"note":7},{"x":20.0,"len":1.19,"m":56,"k":"melody","v":0.63,"note":7},{"x":20.156,"len":1.02,"m":68,"k":"melody","v":0.51,"note":7},{"x":21.0,"len":1.21,"m":56,"k":"melody","v":0.65,"note":7},{"x":21.006,"len":2.64,"m":42,"k":"low","v":0.5,"note":-19},{"x":21.006,"len":2.44,"m":30,"k":"low","v":0.5,"note":-19},{"x":21.164,"len":0.94,"m":68,"k":"melody","v":0.45,"note":7},{"x":22.0,"len":2.42,"m":56,"k":"melody","v":1.0,"note":7},{"x":22.164,"len":1.51,"m":68,"k":"melody","v":0.74,"note":7},{"x":23.0,"len":1.26,"m":56,"k":"melody","v":0.67,"note":7},{"x":23.164,"len":0.74,"m":68,"k":"melody","v":0.29,"note":7},{"x":24.0,"len":1.28,"m":68,"k":"melody","v":0.68,"note":7},{"x":24.164,"len":0.64,"m":68,"k":"melody","v":0.22,"note":7},{"x":25.0,"len":2.55,"m":49,"k":"melody","v":1.0,"note":0},{"x":25.172,"len":0.86,"m":49,"k":"melody","v":0.33,"note":0},{"x":26.0,"len":1.32,"m":61,"k":"melody","v":0.7,"note":0},{"x":26.172,"len":0.51,"m":49,"k":"melody","v":0.13,"note":0},{"x":26.667,"len":45.02,"m":61,"k":"choir","v":1.0,"note":-12},{"x":26.667,"len":45.02,"m":56,"k":"choir","v":1.0,"note":-5},{"x":27.0,"len":1.34,"m":49,"k":"melody","v":0.71,"note":0},{"x":27.172,"len":0.49,"m":61,"k":"melody","v":0.13,"note":0},{"x":28.0,"len":2.64,"m":49,"k":"melody","v":1.0,"note":0},{"x":28.18,"len":0.77,"m":61,"k":"melody","v":0.29,"note":0},{"x":29.0,"len":1.36,"m":61,"k":"melody","v":0.73,"note":0},{"x":29.18,"len":0.56,"m":49,"k":"melody","v":0.19,"note":0},{"x":30.0,"len":1.37,"m":49,"k":"melody","v":0.73,"note":0},{"x":30.18,"len":0.64,"m":61,"k":"melody","v":0.26,"note":0},{"x":31.0,"len":1.38,"m":49,"k":"melody","v":0.74,"note":0},{"x":31.188,"len":0.73,"m":61,"k":"melody","v":0.33,"note":0},{"x":32.0,"len":2.73,"m":61,"k":"melody","v":1.0,"note":0},{"x":32.188,"len":1.58,"m":49,"k":"melody","v":0.82,"note":0},{"x":33.0,"len":1.39,"m":49,"k":"melody","v":0.75,"note":0},{"x":33.188,"len":0.93,"m":61,"k":"melody","v":0.48,"note":0},{"x":34.0,"len":1.4,"m":49,"k":"melody","v":0.75,"note":0},{"x":34.195,"len":1.02,"m":61,"k":"melody","v":0.54,"note":0},{"x":35.0,"len":2.75,"m":49,"k":"melody","v":1.0,"note":0},{"x":35.195,"len":2.09,"m":61,"k":"melody","v":1.0,"note":0},{"x":36.0,"len":1.4,"m":49,"k":"melody","v":0.75,"note":0},{"x":36.195,"len":1.09,"m":61,"k":"melody","v":0.57,"note":0},{"x":37.0,"len":1.4,"m":49,"k":"melody","v":0.75,"note":0},{"x":37.203,"len":1.07,"m":61,"k":"melody","v":0.55,"note":0},{"x":38.0,"len":2.73,"m":49,"k":"melody","v":1.0,"note":0},{"x":38.203,"len":1.94,"m":61,"k":"melody","v":1.0,"note":0},{"x":39.0,"len":1.39,"m":49,"k":"melody","v":0.74,"note":0},{"x":39.203,"len":0.94,"m":61,"k":"melody","v":0.44,"note":0},{"x":40.0,"len":1.38,"m":49,"k":"melody","v":0.74,"note":0},{"x":40.203,"len":0.85,"m":61,"k":"melody","v":0.37,"note":0},{"x":40.309,"len":2.35,"m":38,"k":"low","v":0.5,"note":-23},{"x":40.309,"len":2.38,"m":38,"k":"low","v":0.5,"note":-23},{"x":41.0,"len":2.68,"m":49,"k":"melody","v":1.0,"note":0},{"x":41.211,"len":1.26,"m":61,"k":"melody","v":0.58,"note":0},{"x":42.0,"len":1.35,"m":49,"k":"melody","v":0.72,"note":0},{"x":42.211,"len":0.64,"m":49,"k":"melody","v":0.22,"note":0},{"x":43.0,"len":1.34,"m":61,"k":"melody","v":0.72,"note":0},{"x":43.211,"len":0.56,"m":49,"k":"melody","v":0.17,"note":0},{"x":43.512,"len":17.75,"m":50,"k":"low","v":0.5,"note":-11},{"x":43.512,"len":14.87,"m":38,"k":"low","v":0.5,"note":-11},{"x":44.0,"len":2.6,"m":49,"k":"melody","v":1.0,"note":0},{"x":44.219,"len":0.74,"m":49,"k":"melody","v":0.26,"note":0},{"x":45.0,"len":1.31,"m":61,"k":"melody","v":0.7,"note":0},{"x":45.219,"len":0.49,"m":49,"k":"melody","v":0.13,"note":0},{"x":46.0,"len":1.29,"m":49,"k":"melody","v":0.69,"note":0},{"x":46.219,"len":0.51,"m":61,"k":"melody","v":0.15,"note":0},{"x":47.0,"len":1.27,"m":50,"k":"melody","v":0.68,"note":1},{"x":47.227,"len":0.56,"m":62,"k":"melody","v":0.19,"note":1},{"x":48.0,"len":2.44,"m":62,"k":"melody","v":1.0,"note":1},{"x":48.0,"len":33.16,"m":50,"k":"choir","v":0.88,"note":-11},{"x":48.0,"len":33.16,"m":78,"k":"choir","v":0.88,"note":5},{"x":48.227,"len":1.1,"m":50,"k":"melody","v":0.51,"note":1},{"x":49.0,"len":1.22,"m":50,"k":"melody","v":0.65,"note":1},{"x":49.227,"len":0.74,"m":62,"k":"melody","v":0.33,"note":1},{"x":50.0,"len":1.2,"m":50,"k":"melody","v":0.64,"note":1},{"x":50.234,"len":0.84,"m":50,"k":"melody","v":0.41,"note":1},{"x":51.0,"len":2.3,"m":62,"k":"melody","v":1.0,"note":1},{"x":51.234,"len":1.8,"m":50,"k":"melody","v":0.96,"note":1},{"x":52.0,"len":1.15,"m":50,"k":"melody","v":0.61,"note":1},{"x":52.234,"len":1.02,"m":62,"k":"melody","v":0.54,"note":1},{"x":53.0,"len":1.12,"m":50,"k":"melody","v":0.59,"note":1},{"x":53.242,"len":1.07,"m":50,"k":"melody","v":0.57,"note":1},{"x":54.242,"len":2.12,"m":62,"k":"melody","v":1.0,"note":1},{"x":55.242,"len":1.07,"m":50,"k":"melody","v":0.55,"note":1},{"x":56.242,"len":1.02,"m":50,"k":"melody","v":0.51,"note":1},{"x":57.25,"len":1.74,"m":50,"k":"melody","v":0.88,"note":1},{"x":58.25,"len":0.85,"m":62,"k":"melody","v":0.37,"note":1},{"x":59.25,"len":0.74,"m":50,"k":"melody","v":0.29,"note":1},{"x":60.125,"len":1.39,"m":56,"k":"melody","v":0.74,"note":7},{"x":60.125,"len":1.06,"m":68,"k":"melody","v":0.45,"note":7},{"x":61.125,"len":0.71,"m":56,"k":"melody","v":0.36,"note":7},{"x":61.125,"len":0.57,"m":56,"k":"melody","v":0.17,"note":7},{"x":62.125,"len":0.62,"m":56,"k":"melody","v":0.32,"note":7},{"x":62.125,"len":0.51,"m":68,"k":"melody","v":0.14,"note":7},{"x":63.125,"len":0.49,"m":56,"k":"melody","v":0.24,"note":7},{"x":63.133,"len":0.49,"m":68,"k":"melody","v":0.12,"note":7},{"x":64.0,"len":44.56,"m":56,"k":"choir","v":1.0,"note":-5},{"x":64.0,"len":44.56,"m":66,"k":"choir","v":1.0,"note":-7},{"x":64.125,"len":0.67,"m":68,"k":"melody","v":0.34,"note":7},{"x":64.133,"len":0.76,"m":56,"k":"melody","v":0.29,"note":7},{"x":65.125,"len":0.29,"m":68,"k":"melody","v":0.13,"note":7},{"x":65.133,"len":0.55,"m":56,"k":"melody","v":0.19,"note":7},{"x":66.125,"len":0.29,"m":78,"k":"melody","v":0.13,"note":17},{"x":66.141,"len":0.62,"m":66,"k":"melody","v":0.25,"note":17},{"x":67.125,"len":0.68,"m":78,"k":"melody","v":0.35,"note":17},{"x":67.141,"len":1.3,"m":66,"k":"melody","v":0.65,"note":17},{"x":68.125,"len":0.49,"m":78,"k":"melody","v":0.24,"note":17},{"x":68.141,"len":0.83,"m":66,"k":"melody","v":0.4,"note":17},{"x":69.125,"len":0.62,"m":78,"k":"melody","v":0.32,"note":17},{"x":69.141,"len":0.93,"m":66,"k":"melody","v":0.47,"note":17},{"x":69.262,"len":26.29,"m":30,"k":"low","v":0.5,"note":-19},{"x":69.262,"len":2.3,"m":42,"k":"low","v":0.5,"note":-19},{"x":69.333,"len":33.52,"m":66,"k":"choir","v":0.89,"note":5},{"x":69.333,"len":33.52,"m":62,"k":"choir","v":0.89,"note":-11},{"x":70.125,"len":1.36,"m":78,"k":"melody","v":0.73,"note":17},{"x":70.148,"len":1.96,"m":66,"k":"melody","v":1.0,"note":17},{"x":71.125,"len":0.72,"m":66,"k":"melody","v":0.37,"note":17},{"x":71.148,"len":1.07,"m":78,"k":"melody","v":0.57,"note":17},{"x":72.125,"len":0.66,"m":78,"k":"melody","v":0.34,"note":17},{"x":72.148,"len":1.09,"m":66,"k":"melody","v":0.57,"note":17},{"x":73.125,"len":1.02,"m":78,"k":"melody","v":0.54,"note":17},{"x":73.156,"len":2.08,"m":78,"k":"melody","v":1.0,"note":17},{"x":74.125,"len":0.4,"m":66,"k":"melody","v":0.2,"note":17},{"x":74.156,"len":1.03,"m":78,"k":"melody","v":0.51,"note":17},{"x":75.125,"len":0.31,"m":66,"k":"melody","v":0.14,"note":17},{"x":75.156,"len":0.95,"m":66,"k":"melody","v":0.45,"note":17},{"x":76.125,"len":0.5,"m":66,"k":"melody","v":0.25,"note":5},{"x":76.164,"len":1.53,"m":54,"k":"melody","v":0.75,"note":5},{"x":77.125,"len":0.33,"m":66,"k":"melody","v":0.15,"note":5},{"x":77.164,"len":0.75,"m":66,"k":"melody","v":0.3,"note":5},{"x":78.125,"len":0.45,"m":66,"k":"melody","v":0.22,"note":5},{"x":78.164,"len":0.65,"m":54,"k":"melody","v":0.23,"note":5},{"x":79.125,"len":0.58,"m":66,"k":"melody","v":0.29,"note":5},{"x":79.172,"len":0.57,"m":54,"k":"melody","v":0.17,"note":5},{"x":80.0,"len":32.26,"m":66,"k":"choir","v":0.85,"note":-7},{"x":80.0,"len":32.26,"m":49,"k":"choir","v":0.85,"note":-12},{"x":80.125,"len":1.32,"m":66,"k":"melody","v":0.7,"note":5},{"x":80.172,"len":0.75,"m":54,"k":"melody","v":0.27,"note":5},{"x":81.125,"len":0.73,"m":54,"k":"melody","v":0.38,"note":5},{"x":81.172,"len":0.49,"m":66,"k":"melody","v":0.12,"note":5},{"x":82.125,"len":0.69,"m":54,"k":"melody","v":0.35,"note":5},{"x":82.18,"len":0.5,"m":66,"k":"melody","v":0.14,"note":5},{"x":83.125,"len":1.11,"m":54,"k":"melody","v":0.59,"note":5},{"x":83.18,"len":0.88,"m":66,"k":"melody","v":0.38,"note":5},{"x":84.125,"len":0.45,"m":66,"k":"melody","v":0.22,"note":5},{"x":84.18,"len":0.63,"m":66,"k":"melody","v":0.25,"note":5},{"x":85.125,"len":0.33,"m":54,"k":"melody","v":0.16,"note":5},{"x":85.18,"len":0.72,"m":66,"k":"melody","v":0.33,"note":5},{"x":86.125,"len":0.51,"m":54,"k":"melody","v":0.25,"note":5},{"x":86.188,"len":1.55,"m":66,"k":"melody","v":0.81,"note":5},{"x":87.125,"len":0.31,"m":54,"k":"melody","v":0.14,"note":5},{"x":87.188,"len":0.93,"m":66,"k":"melody","v":0.47,"note":5},{"x":88.125,"len":0.4,"m":54,"k":"melody","v":0.19,"note":5},{"x":88.188,"len":1.01,"m":66,"k":"melody","v":0.53,"note":5},{"x":88.564,"len":16.18,"m":38,"k":"low","v":0.5,"note":-11},{"x":88.564,"len":2.27,"m":50,"k":"low","v":0.5,"note":-11},{"x":89.125,"len":1.01,"m":54,"k":"melody","v":0.53,"note":5},{"x":89.195,"len":2.09,"m":66,"k":"melody","v":1.0,"note":5},{"x":90.125,"len":0.65,"m":66,"k":"melody","v":0.33,"note":5},{"x":90.195,"len":1.09,"m":54,"k":"melody","v":0.57,"note":5},{"x":91.125,"len":0.72,"m":66,"k":"melody","v":0.37,"note":5},{"x":91.195,"len":1.08,"m":66,"k":"melody","v":0.56,"note":5},{"x":91.766,"len":2.38,"m":38,"k":"low","v":0.5,"note":-11},{"x":91.766,"len":9.74,"m":50,"k":"low","v":0.5,"note":-11},{"x":92.125,"len":1.37,"m":66,"k":"melody","v":0.73,"note":5},{"x":92.203,"len":1.95,"m":54,"k":"melody","v":1.0,"note":5},{"x":93.125,"len":0.63,"m":66,"k":"melody","v":0.32,"note":5},{"x":93.203,"len":0.96,"m":66,"k":"melody","v":0.45,"note":5},{"x":94.125,"len":0.5,"m":66,"k":"melody","v":0.25,"note":5},{"x":94.203,"len":0.86,"m":66,"k":"melody","v":0.37,"note":5},{"x":95.0,"len":0.65,"m":66,"k":"melody","v":0.33,"note":5},{"x":95.125,"len":0.37,"m":66,"k":"melody","v":0.18,"note":5},{"x":95.211,"len":0.75,"m":54,"k":"melody","v":0.29,"note":5},{"x":96.0,"len":1.28,"m":66,"k":"melody","v":0.69,"note":5},{"x":96.125,"len":0.53,"m":54,"k":"melody","v":0.26,"note":5},{"x":96.211,"len":1.05,"m":66,"k":"melody","v":0.45,"note":5},{"x":97.0,"len":0.69,"m":54,"k":"melody","v":0.36,"note":5},{"x":97.125,"len":0.29,"m":54,"k":"melody","v":0.13,"note":5},{"x":97.211,"len":0.57,"m":54,"k":"melody","v":0.17,"note":5},{"x":98.0,"len":0.72,"m":66,"k":"melody","v":0.37,"note":5},{"x":98.125,"len":0.36,"m":54,"k":"melody","v":0.17,"note":5},{"x":98.219,"len":0.51,"m":62,"k":"melody","v":0.13,"note":1},{"x":99.0,"len":1.43,"m":62,"k":"melody","v":0.77,"note":1},{"x":99.125,"len":0.92,"m":50,"k":"melody","v":0.48,"note":1},{"x":99.219,"len":0.71,"m":62,"k":"melody","v":0.25,"note":1},{"x":100.0,"len":0.77,"m":62,"k":"melody","v":0.4,"note":1},{"x":100.125,"len":0.62,"m":50,"k":"melody","v":0.31,"note":1},{"x":100.219,"len":0.5,"m":50,"k":"melody","v":0.14,"note":1},{"x":101.0,"len":0.8,"m":62,"k":"melody","v":0.41,"note":1},{"x":101.125,"len":0.71,"m":50,"k":"melody","v":0.36,"note":1},{"x":101.219,"len":0.55,"m":62,"k":"melody","v":0.19,"note":1},{"x":101.333,"len":29.84,"m":50,"k":"choir","v":0.79,"note":-11},{"x":101.333,"len":29.84,"m":50,"k":"choir","v":0.79,"note":-11},{"x":102.0,"len":1.6,"m":62,"k":"melody","v":0.86,"note":1},{"x":102.125,"len":1.39,"m":50,"k":"melody","v":0.75,"note":1},{"x":102.227,"len":1.08,"m":63,"k":"melody","v":0.5,"note":2},{"x":103.0,"len":0.86,"m":63,"k":"melody","v":0.45,"note":2},{"x":103.125,"len":0.66,"m":51,"k":"melody","v":0.34,"note":2},{"x":103.227,"len":0.72,"m":63,"k":"melody","v":0.33,"note":2},{"x":104.0,"len":0.88,"m":63,"k":"melody","v":0.46,"note":2},{"x":104.125,"len":0.54,"m":51,"k":"melody","v":0.27,"note":2},{"x":104.227,"len":0.83,"m":63,"k":"melody","v":0.41,"note":2},{"x":105.0,"len":1.77,"m":51,"k":"melody","v":0.96,"note":2},{"x":105.125,"len":0.77,"m":63,"k":"melody","v":0.4,"note":2},{"x":105.234,"len":1.79,"m":51,"k":"melody","v":0.95,"note":2},{"x":106.0,"len":0.94,"m":63,"k":"melody","v":0.5,"note":2},{"x":106.125,"len":0.31,"m":63,"k":"melody","v":0.14,"note":2},{"x":106.234,"len":1.02,"m":63,"k":"melody","v":0.53,"note":2},{"x":107.0,"len":0.97,"m":51,"k":"melody","v":0.51,"note":2},{"x":107.125,"len":0.28,"m":63,"k":"melody","v":0.12,"note":2},{"x":107.234,"len":1.07,"m":51,"k":"melody","v":0.57,"note":2},{"x":108.0,"len":1.95,"m":51,"k":"melody","v":1.0,"note":2},{"x":108.125,"len":0.6,"m":63,"k":"melody","v":0.3,"note":2},{"x":108.242,"len":2.13,"m":63,"k":"melody","v":1.0,"note":2},{"x":109.0,"len":1.03,"m":51,"k":"melody","v":0.55,"note":2},{"x":109.125,"len":0.44,"m":63,"k":"melody","v":0.21,"note":2},{"x":109.242,"len":1.08,"m":63,"k":"melody","v":0.56,"note":2},{"x":110.0,"len":1.06,"m":63,"k":"melody","v":0.56,"note":2},{"x":110.125,"len":0.57,"m":51,"k":"melody","v":0.29,"note":2},{"x":110.242,"len":1.03,"m":51,"k":"melody","v":0.51,"note":2},{"x":111.125,"len":0.68,"m":48,"k":"low","v":0.35,"note":-1},{"x":111.25,"len":0.95,"m":60,"k":"low","v":0.45,"note":-1},{"x":112.0,"len":42.71,"m":48,"k":"choir","v":1.0,"note":-13},{"x":112.0,"len":42.71,"m":53,"k":"choir","v":1.0,"note":-8},{"x":112.125,"len":1.4,"m":62,"k":"melody","v":0.75,"note":1},{"x":112.25,"len":1.52,"m":62,"k":"melody","v":0.74,"note":1},{"x":113.125,"len":0.69,"m":62,"k":"melody","v":0.36,"note":1},{"x":113.25,"len":0.75,"m":50,"k":"melody","v":0.29,"note":1},{"x":114.125,"len":0.59,"m":62,"k":"melody","v":0.3,"note":1},{"x":114.25,"len":0.65,"m":62,"k":"melody","v":0.22,"note":1},{"x":115.125,"len":0.86,"m":63,"k":"melody","v":0.45,"note":2},{"x":115.125,"len":0.88,"m":63,"k":"melody","v":0.35,"note":2},{"x":116.125,"len":0.34,"m":63,"k":"melody","v":0.16,"note":2},{"x":116.125,"len":0.51,"m":63,"k":"melody","v":0.14,"note":2},{"x":117.125,"len":0.28,"m":63,"k":"melody","v":0.13,"note":2},{"x":117.125,"len":0.49,"m":63,"k":"melody","v":0.12,"note":2},{"x":117.518,"len":2.87,"m":43,"k":"low","v":0.5,"note":-18},{"x":117.518,"len":2.24,"m":31,"k":"low","v":0.5,"note":-18},{"x":118.125,"len":0.55,"m":62,"k":"melody","v":0.28,"note":1},{"x":118.133,"len":0.75,"m":62,"k":"melody","v":0.28,"note":1},{"x":119.125,"len":0.39,"m":62,"k":"melody","v":0.19,"note":1},{"x":119.133,"len":0.54,"m":62,"k":"melody","v":0.18,"note":1},{"x":120.125,"len":0.52,"m":62,"k":"melody","v":0.26,"note":1},{"x":120.133,"len":0.62,"m":50,"k":"melody","v":0.24,"note":1},{"x":121.125,"len":1.24,"m":62,"k":"melody","v":0.66,"note":1},{"x":121.141,"len":1.28,"m":62,"k":"melody","v":0.64,"note":1},{"x":122.125,"len":0.72,"m":50,"k":"melody","v":0.37,"note":1},{"x":122.141,"len":0.81,"m":62,"k":"melody","v":0.4,"note":1},{"x":122.667,"len":45.69,"m":62,"k":"choir","v":1.0,"note":-11},{"x":122.667,"len":45.69,"m":62,"k":"choir","v":1.0,"note":-11},{"x":123.125,"len":0.71,"m":50,"k":"melody","v":0.37,"note":1},{"x":123.141,"len":0.92,"m":62,"k":"melody","v":0.47,"note":1},{"x":124.125,"len":1.21,"m":50,"k":"melody","v":0.64,"note":1},{"x":124.148,"len":1.95,"m":62,"k":"melody","v":1.0,"note":1},{"x":125.125,"len":0.5,"m":50,"k":"melody","v":0.25,"note":1},{"x":125.148,"len":1.07,"m":62,"k":"melody","v":0.56,"note":1},{"x":126.125,"len":0.38,"m":50,"k":"melody","v":0.18,"note":1},{"x":126.148,"len":1.1,"m":62,"k":"melody","v":0.57,"note":1},{"x":127.125,"len":0.29,"m":50,"k":"melody","v":0.13,"note":1},{"x":127.156,"len":1.08,"m":51,"k":"melody","v":0.56,"note":2}],"drums":[{"x":0.0,"k":1,"f":209.84,"lvl":0.4},{"x":0.0,"k":2,"f":839.35,"lvl":0.41},{"x":0.0,"k":3,"f":666.19,"lvl":0.99},{"x":3.0,"k":2,"f":1120.4,"lvl":0.25},{"x":5.333,"k":1,"f":209.84,"lvl":0.25},{"x":6.0,"k":2,"f":839.35,"lvl":0.33},{"x":6.4,"k":3,"f":560.2,"lvl":0.49},{"x":9.0,"k":2,"f":1120.4,"lvl":0.25},{"x":9.6,"k":3,"f":839.35,"lvl":0.49},{"x":10.667,"k":1,"f":209.84,"lvl":0.32},{"x":12.0,"k":2,"f":839.35,"lvl":0.25},{"x":12.8,"k":3,"f":560.2,"lvl":0.49},{"x":16.0,"k":1,"f":209.84,"lvl":0.4},{"x":16.0,"k":2,"f":1120.4,"lvl":0.4},{"x":16.0,"k":3,"f":839.35,"lvl":1.0},{"x":19.0,"k":2,"f":839.35,"lvl":0.25},{"x":21.333,"k":1,"f":209.84,"lvl":0.25},{"x":22.0,"k":2,"f":1120.4,"lvl":0.32},{"x":22.4,"k":3,"f":839.35,"lvl":0.4},{"x":25.0,"k":2,"f":839.35,"lvl":0.25},{"x":25.6,"k":3,"f":560.2,"lvl":0.36},{"x":26.667,"k":1,"f":209.84,"lvl":0.32},{"x":28.0,"k":2,"f":1120.4,"lvl":0.25},{"x":28.8,"k":3,"f":666.19,"lvl":0.33},{"x":32.0,"k":1,"f":209.84,"lvl":0.4},{"x":32.0,"k":2,"f":839.35,"lvl":0.4},{"x":32.0,"k":3,"f":560.2,"lvl":0.62},{"x":35.0,"k":2,"f":1120.4,"lvl":0.25},{"x":36.572,"k":4,"f":2515.21,"lvl":0.03},{"x":37.333,"k":1,"f":209.84,"lvl":0.25},{"x":38.0,"k":2,"f":839.35,"lvl":0.32},{"x":38.4,"k":3,"f":560.2,"lvl":0.27},{"x":38.857,"k":4,"f":2515.21,"lvl":0.17},{"x":41.0,"k":2,"f":1120.4,"lvl":0.25},{"x":41.143,"k":4,"f":2515.21,"lvl":0.28},{"x":41.6,"k":3,"f":666.19,"lvl":0.26},{"x":42.667,"k":1,"f":209.84,"lvl":0.32},{"x":43.429,"k":4,"f":2515.21,"lvl":0.37},{"x":44.0,"k":2,"f":839.35,"lvl":0.25},{"x":44.8,"k":3,"f":839.35,"lvl":0.25},{"x":45.714,"k":4,"f":2515.21,"lvl":0.43},{"x":48.0,"k":1,"f":209.84,"lvl":0.4},{"x":48.0,"k":2,"f":1120.4,"lvl":0.4},{"x":48.0,"k":3,"f":839.35,"lvl":0.48},{"x":48.0,"k":4,"f":2515.21,"lvl":0.77},{"x":50.286,"k":4,"f":2515.21,"lvl":0.51},{"x":51.0,"k":2,"f":839.35,"lvl":0.25},{"x":52.572,"k":4,"f":2515.21,"lvl":0.54},{"x":53.333,"k":1,"f":209.84,"lvl":0.25},{"x":54.0,"k":2,"f":1120.4,"lvl":0.32},{"x":54.4,"k":3,"f":666.19,"lvl":0.23},{"x":54.857,"k":4,"f":2515.21,"lvl":0.56},{"x":57.0,"k":2,"f":839.35,"lvl":0.25},{"x":57.143,"k":4,"f":2515.21,"lvl":0.57},{"x":57.6,"k":3,"f":839.35,"lvl":0.22},{"x":58.667,"k":1,"f":209.84,"lvl":0.32},{"x":59.429,"k":4,"f":2515.21,"lvl":0.58},{"x":60.0,"k":2,"f":1120.4,"lvl":0.25},{"x":60.8,"k":3,"f":560.2,"lvl":0.22},{"x":61.714,"k":4,"f":2515.21,"lvl":0.59},{"x":64.0,"k":1,"f":209.84,"lvl":0.4},{"x":64.0,"k":2,"f":839.35,"lvl":0.4},{"x":64.0,"k":3,"f":666.19,"lvl":0.43},{"x":64.0,"k":4,"f":2515.21,"lvl":0.97},{"x":66.286,"k":4,"f":2515.21,"lvl":0.6},{"x":67.0,"k":2,"f":1120.4,"lvl":0.25},{"x":68.572,"k":4,"f":2515.21,"lvl":0.61},{"x":69.333,"k":1,"f":209.84,"lvl":0.25},{"x":70.0,"k":2,"f":839.35,"lvl":0.32},{"x":70.4,"k":3,"f":747.78,"lvl":0.21},{"x":70.857,"k":4,"f":3357.41,"lvl":0.61},{"x":73.0,"k":2,"f":747.78,"lvl":0.25},{"x":73.143,"k":4,"f":3357.41,"lvl":0.61},{"x":73.6,"k":3,"f":560.2,"lvl":0.21},{"x":74.667,"k":1,"f":280.1,"lvl":0.32},{"x":75.429,"k":4,"f":3357.41,"lvl":0.61},{"x":76.0,"k":2,"f":1120.4,"lvl":0.25},{"x":76.8,"k":3,"f":747.78,"lvl":0.2},{"x":77.714,"k":4,"f":3357.41,"lvl":0.62},{"x":80.0,"k":1,"f":280.1,"lvl":0.4},{"x":80.0,"k":2,"f":747.78,"lvl":0.4},{"x":80.0,"k":3,"f":560.2,"lvl":0.41},{"x":80.0,"k":4,"f":3357.41,"lvl":0.99},{"x":82.286,"k":4,"f":3357.41,"lvl":0.62},{"x":83.0,"k":2,"f":1120.4,"lvl":0.25},{"x":84.572,"k":4,"f":3357.41,"lvl":0.62},{"x":85.333,"k":1,"f":280.1,"lvl":0.25},{"x":86.0,"k":2,"f":747.78,"lvl":0.32},{"x":86.4,"k":3,"f":560.2,"lvl":0.2},{"x":86.857,"k":4,"f":3357.41,"lvl":0.62},{"x":89.0,"k":2,"f":1120.4,"lvl":0.25},{"x":89.143,"k":4,"f":3357.41,"lvl":0.62},{"x":89.6,"k":3,"f":747.78,"lvl":0.2},{"x":90.667,"k":1,"f":280.1,"lvl":0.32},{"x":91.429,"k":4,"f":3357.41,"lvl":0.62},{"x":92.0,"k":2,"f":747.78,"lvl":0.25},{"x":92.8,"k":3,"f":889.26,"lvl":0.2},{"x":93.714,"k":4,"f":3357.41,"lvl":0.62},{"x":96.0,"k":1,"f":280.1,"lvl":0.4},{"x":96.0,"k":2,"f":1120.4,"lvl":0.4},{"x":96.0,"k":3,"f":747.78,"lvl":0.4},{"x":96.0,"k":4,"f":3357.41,"lvl":1.0},{"x":98.286,"k":4,"f":3357.41,"lvl":0.57},{"x":99.0,"k":2,"f":747.78,"lvl":0.25},{"x":100.572,"k":4,"f":3357.41,"lvl":0.53},{"x":101.333,"k":1,"f":280.1,"lvl":0.25},{"x":102.0,"k":2,"f":1120.4,"lvl":0.32},{"x":102.4,"k":3,"f":593.51,"lvl":0.2},{"x":102.857,"k":4,"f":2664.78,"lvl":0.49},{"x":105.0,"k":2,"f":1187.02,"lvl":0.25},{"x":105.143,"k":4,"f":2664.78,"lvl":0.46},{"x":105.6,"k":3,"f":705.81,"lvl":0.2},{"x":106.667,"k":1,"f":222.32,"lvl":0.32},{"x":107.429,"k":4,"f":2664.78,"lvl":0.43},{"x":108.0,"k":2,"f":889.26,"lvl":0.25},{"x":108.8,"k":3,"f":889.26,"lvl":0.2},{"x":109.714,"k":4,"f":2664.78,"lvl":0.41},{"x":112.0,"k":1,"f":222.32,"lvl":0.4},{"x":112.0,"k":2,"f":1187.02,"lvl":0.4},{"x":112.0,"k":3,"f":889.26,"lvl":0.4},{"x":112.0,"k":4,"f":2664.78,"lvl":0.62},{"x":114.286,"k":4,"f":2664.78,"lvl":0.37},{"x":115.0,"k":2,"f":889.26,"lvl":0.25},{"x":116.572,"k":4,"f":2664.78,"lvl":0.35},{"x":117.333,"k":1,"f":222.32,"lvl":0.25},{"x":118.0,"k":2,"f":1187.02,"lvl":0.32},{"x":118.4,"k":3,"f":705.81,"lvl":0.2},{"x":118.857,"k":4,"f":2664.78,"lvl":0.34},{"x":121.0,"k":2,"f":889.26,"lvl":0.25},{"x":121.143,"k":4,"f":2664.78,"lvl":0.33},{"x":121.6,"k":3,"f":889.26,"lvl":0.2},{"x":122.667,"k":1,"f":222.32,"lvl":0.32},{"x":123.429,"k":4,"f":2664.78,"lvl":0.32},{"x":124.0,"k":2,"f":1187.02,"lvl":0.25},{"x":124.8,"k":3,"f":593.51,"lvl":0.2},{"x":125.714,"k":4,"f":2664.78,"lvl":0.31}],"genes":[3,3,5,7,11]},"full":{"bar0":69,"bars":2,"key":3,"minor":0,"arc":[0.813,0.851],"mood":1.0,"notes":[{"x":0.125,"len":1.33,"m":85,"k":"melody","v":0.71,"note":24},{"x":0.148,"len":0.67,"m":73,"k":"melody","v":0.25,"note":24},{"x":1.125,"len":0.73,"m":73,"k":"melody","v":0.38,"note":24},{"x":1.148,"len":0.45,"m":85,"k":"melody","v":0.15,"note":24},{"x":2.125,"len":0.68,"m":85,"k":"melody","v":0.35,"note":24},{"x":2.148,"len":0.5,"m":73,"k":"melody","v":0.19,"note":24},{"x":3.125,"len":1.1,"m":85,"k":"melody","v":0.58,"note":24},{"x":3.148,"len":1.04,"m":73,"k":"melody","v":0.52,"note":24},{"x":4.125,"len":0.44,"m":85,"k":"melody","v":0.22,"note":24},{"x":4.156,"len":0.68,"m":73,"k":"melody","v":0.34,"note":24},{"x":5.125,"len":0.33,"m":73,"k":"melody","v":0.15,"note":24},{"x":5.156,"len":0.8,"m":85,"k":"melody","v":0.41,"note":24},{"x":5.333,"len":31.92,"m":61,"k":"choir","v":0.84,"note":0},{"x":5.333,"len":31.92,"m":61,"k":"choir","v":0.84,"note":-12},{"x":6.125,"len":0.5,"m":73,"k":"melody","v":0.25,"note":24},{"x":6.156,"len":1.79,"m":85,"k":"melody","v":0.96,"note":24},{"x":7.125,"len":0.31,"m":76,"k":"melody","v":0.14,"note":27},{"x":7.164,"len":1.02,"m":76,"k":"melody","v":0.54,"note":27},{"x":8.125,"len":0.41,"m":76,"k":"melody","v":0.2,"note":27},{"x":8.164,"len":1.09,"m":88,"k":"melody","v":0.57,"note":27},{"x":9.125,"len":1.03,"m":76,"k":"melody","v":0.54,"note":27},{"x":9.164,"len":2.16,"m":76,"k":"melody","v":1.0,"note":27},{"x":10.125,"len":0.66,"m":88,"k":"melody","v":0.34,"note":27},{"x":10.172,"len":1.13,"m":76,"k":"melody","v":0.55,"note":27},{"x":10.667,"len":43.19,"m":64,"k":"choir","v":1.0,"note":3},{"x":10.667,"len":43.19,"m":71,"k":"choir","v":1.0,"note":-2},{"x":11.125,"len":0.72,"m":88,"k":"melody","v":0.37,"note":27},{"x":11.172,"len":1.09,"m":76,"k":"melody","v":0.51,"note":27},{"x":12.125,"len":1.36,"m":76,"k":"melody","v":0.73,"note":27},{"x":12.172,"len":1.79,"m":88,"k":"melody","v":0.88,"note":27},{"x":13.125,"len":0.62,"m":76,"k":"melody","v":0.32,"note":27},{"x":13.18,"len":0.9,"m":76,"k":"melody","v":0.36,"note":27},{"x":14.125,"len":0.49,"m":76,"k":"melody","v":0.24,"note":27},{"x":14.18,"len":0.78,"m":88,"k":"melody","v":0.29,"note":27},{"x":15.125,"len":0.36,"m":76,"k":"melody","v":0.17,"note":27},{"x":15.18,"len":0.66,"m":88,"k":"melody","v":0.22,"note":27},{"x":16.125,"len":0.52,"m":76,"k":"melody","v":0.26,"note":27},{"x":16.188,"len":0.85,"m":73,"k":"melody","v":0.33,"note":12},{"x":17.125,"len":0.29,"m":61,"k":"melody","v":0.13,"note":12},{"x":17.188,"len":0.48,"m":73,"k":"melody","v":0.13,"note":12},{"x":18.125,"len":0.37,"m":61,"k":"melody","v":0.17,"note":12},{"x":18.188,"len":0.45,"m":73,"k":"melody","v":0.13,"note":12},{"x":19.125,"len":0.93,"m":61,"k":"melody","v":0.49,"note":12},{"x":19.188,"len":0.72,"m":73,"k":"melody","v":0.3,"note":12},{"x":20.125,"len":0.62,"m":61,"k":"melody","v":0.32,"note":12},{"x":20.195,"len":0.5,"m":73,"k":"melody","v":0.2,"note":12},{"x":21.125,"len":0.71,"m":61,"k":"melody","v":0.36,"note":12},{"x":21.195,"len":0.58,"m":73,"k":"melody","v":0.26,"note":12},{"x":21.333,"len":40.98,"m":49,"k":"choir","v":1.0,"note":-12},{"x":21.333,"len":40.98,"m":52,"k":"choir","v":1.0,"note":-9},{"x":22.125,"len":1.39,"m":61,"k":"melody","v":0.74,"note":12},{"x":22.195,"len":1.29,"m":73,"k":"melody","v":0.67,"note":12},{"x":23.125,"len":0.66,"m":61,"k":"melody","v":0.34,"note":12},{"x":23.203,"len":0.8,"m":73,"k":"melody","v":0.41,"note":12},{"x":24.125,"len":0.54,"m":61,"k":"melody","v":0.27,"note":12},{"x":24.203,"len":0.92,"m":73,"k":"melody","v":0.48,"note":12},{"x":25.125,"len":0.75,"m":61,"k":"melody","v":0.39,"note":12},{"x":25.203,"len":1.99,"m":73,"k":"melody","v":1.0,"note":12},{"x":26.125,"len":0.31,"m":61,"k":"melody","v":0.14,"note":12},{"x":26.211,"len":1.1,"m":61,"k":"melody","v":0.57,"note":12},{"x":27.125,"len":0.28,"m":61,"k":"melody","v":0.13,"note":12},{"x":27.211,"len":1.14,"m":73,"k":"melody","v":0.57,"note":12},{"x":28.125,"len":0.61,"m":61,"k":"melody","v":0.31,"note":12},{"x":28.211,"len":2.12,"m":61,"k":"melody","v":1.0,"note":12},{"x":29.125,"len":0.45,"m":61,"k":"melody","v":0.22,"note":12},{"x":29.219,"len":1.08,"m":73,"k":"melody","v":0.5,"note":12},{"x":30.125,"len":0.58,"m":61,"k":"melody","v":0.29,"note":12},{"x":30.219,"len":1.0,"m":73,"k":"melody","v":0.44,"note":12},{"x":31.125,"len":0.69,"m":61,"k":"melody","v":0.35,"note":12},{"x":31.219,"len":0.89,"m":73,"k":"melody","v":0.36,"note":12}],"drums":[{"x":0.0,"k":1,"f":249.54,"lvl":0.4},{"x":0.0,"k":2,"f":1332.39,"lvl":0.41},{"x":0.0,"k":3,"f":499.08,"lvl":0.99},{"x":3.0,"k":2,"f":998.16,"lvl":0.25},{"x":5.333,"k":1,"f":209.84,"lvl":0.25},{"x":6.0,"k":2,"f":1120.4,"lvl":0.33},{"x":6.4,"k":3,"f":839.35,"lvl":0.4},{"x":9.0,"k":2,"f":839.35,"lvl":0.25},{"x":9.6,"k":3,"f":560.2,"lvl":0.36},{"x":10.667,"k":1,"f":209.84,"lvl":0.32},{"x":11.429,"k":4,"f":2991.11,"lvl":0.03},{"x":12.0,"k":2,"f":1332.39,"lvl":0.25},{"x":12.8,"k":3,"f":839.35,"lvl":0.33},{"x":13.714,"k":4,"f":2991.11,"lvl":0.17},{"x":16.0,"k":1,"f":249.54,"lvl":0.4},{"x":16.0,"k":2,"f":998.16,"lvl":0.4},{"x":16.0,"k":3,"f":666.19,"lvl":0.62},{"x":16.0,"k":4,"f":2991.11,"lvl":0.45},{"x":18.286,"k":4,"f":2991.11,"lvl":0.36},{"x":19.0,"k":2,"f":1332.39,"lvl":0.25},{"x":20.572,"k":4,"f":2991.11,"lvl":0.43},{"x":21.333,"k":1,"f":249.54,"lvl":0.25},{"x":22.0,"k":2,"f":839.35,"lvl":0.32},{"x":22.4,"k":3,"f":560.2,"lvl":0.27},{"x":22.857,"k":4,"f":2515.21,"lvl":0.47},{"x":25.0,"k":2,"f":1120.4,"lvl":0.25},{"x":25.143,"k":4,"f":2515.21,"lvl":0.51},{"x":25.6,"k":3,"f":666.19,"lvl":0.26},{"x":26.667,"k":1,"f":209.84,"lvl":0.32},{"x":27.429,"k":4,"f":2515.21,"lvl":0.54},{"x":28.0,"k":2,"f":839.35,"lvl":0.25},{"x":28.8,"k":3,"f":839.35,"lvl":0.25},{"x":29.714,"k":4,"f":2515.21,"lvl":0.56}],"genes":[3,3,5,7,11]},"full_raw":{"bar0":69,"bars":2,"key":3,"minor":0,"arc":[0.813,0.851],"mood":1.0,"notes":[{"x":0.125,"len":1.33,"m":86,"k":"melody","v":0.71,"note":25},{"x":0.148,"len":0.67,"m":74,"k":"melody","v":0.25,"note":25},{"x":1.125,"len":0.73,"m":74,"k":"melody","v":0.38,"note":25},{"x":1.148,"len":0.45,"m":86,"k":"melody","v":0.15,"note":25},{"x":2.125,"len":0.68,"m":86,"k":"melody","v":0.35,"note":25},{"x":2.148,"len":0.5,"m":74,"k":"melody","v":0.19,"note":25},{"x":3.125,"len":1.1,"m":86,"k":"melody","v":0.58,"note":25},{"x":3.148,"len":1.04,"m":74,"k":"melody","v":0.52,"note":25},{"x":4.125,"len":0.44,"m":86,"k":"melody","v":0.22,"note":25},{"x":4.156,"len":0.68,"m":74,"k":"melody","v":0.34,"note":25},{"x":5.125,"len":0.33,"m":74,"k":"melody","v":0.15,"note":25},{"x":5.156,"len":0.8,"m":86,"k":"melody","v":0.41,"note":25},{"x":5.333,"len":31.92,"m":62,"k":"choir","v":0.84,"note":1},{"x":5.333,"len":31.92,"m":61,"k":"choir","v":0.84,"note":-12},{"x":6.125,"len":0.5,"m":74,"k":"melody","v":0.25,"note":25},{"x":6.156,"len":1.79,"m":86,"k":"melody","v":0.96,"note":25},{"x":7.125,"len":0.31,"m":76,"k":"melody","v":0.14,"note":27},{"x":7.164,"len":1.02,"m":76,"k":"melody","v":0.54,"note":27},{"x":8.125,"len":0.41,"m":76,"k":"melody","v":0.2,"note":27},{"x":8.164,"len":1.09,"m":88,"k":"melody","v":0.57,"note":27},{"x":9.125,"len":1.03,"m":76,"k":"melody","v":0.54,"note":27},{"x":9.164,"len":2.16,"m":76,"k":"melody","v":1.0,"note":27},{"x":10.125,"len":0.66,"m":88,"k":"melody","v":0.34,"note":27},{"x":10.172,"len":1.13,"m":76,"k":"melody","v":0.55,"note":27},{"x":10.667,"len":43.19,"m":64,"k":"choir","v":1.0,"note":3},{"x":10.667,"len":43.19,"m":70,"k":"choir","v":1.0,"note":-3},{"x":11.125,"len":0.72,"m":88,"k":"melody","v":0.37,"note":27},{"x":11.172,"len":1.09,"m":76,"k":"melody","v":0.51,"note":27},{"x":12.125,"len":1.36,"m":76,"k":"melody","v":0.73,"note":27},{"x":12.172,"len":1.79,"m":88,"k":"melody","v":0.88,"note":27},{"x":13.125,"len":0.62,"m":76,"k":"melody","v":0.32,"note":27},{"x":13.18,"len":0.9,"m":76,"k":"melody","v":0.36,"note":27},{"x":14.125,"len":0.49,"m":76,"k":"melody","v":0.24,"note":27},{"x":14.18,"len":0.78,"m":88,"k":"melody","v":0.29,"note":27},{"x":15.125,"len":0.36,"m":76,"k":"melody","v":0.17,"note":27},{"x":15.18,"len":0.66,"m":88,"k":"melody","v":0.22,"note":27},{"x":16.125,"len":0.52,"m":76,"k":"melody","v":0.26,"note":27},{"x":16.188,"len":0.85,"m":73,"k":"melody","v":0.33,"note":12},{"x":17.125,"len":0.29,"m":61,"k":"melody","v":0.13,"note":12},{"x":17.188,"len":0.48,"m":73,"k":"melody","v":0.13,"note":12},{"x":18.125,"len":0.37,"m":61,"k":"melody","v":0.17,"note":12},{"x":18.188,"len":0.45,"m":73,"k":"melody","v":0.13,"note":12},{"x":19.125,"len":0.93,"m":61,"k":"melody","v":0.49,"note":12},{"x":19.188,"len":0.72,"m":73,"k":"melody","v":0.3,"note":12},{"x":20.125,"len":0.62,"m":61,"k":"melody","v":0.32,"note":12},{"x":20.195,"len":0.5,"m":73,"k":"melody","v":0.2,"note":12},{"x":21.125,"len":0.71,"m":61,"k":"melody","v":0.36,"note":12},{"x":21.195,"len":0.58,"m":73,"k":"melody","v":0.26,"note":12},{"x":21.333,"len":40.98,"m":49,"k":"choir","v":1.0,"note":-12},{"x":21.333,"len":40.98,"m":52,"k":"choir","v":1.0,"note":-9},{"x":22.125,"len":1.39,"m":61,"k":"melody","v":0.74,"note":12},{"x":22.195,"len":1.29,"m":73,"k":"melody","v":0.67,"note":12},{"x":23.125,"len":0.66,"m":61,"k":"melody","v":0.34,"note":12},{"x":23.203,"len":0.8,"m":73,"k":"melody","v":0.41,"note":12},{"x":24.125,"len":0.54,"m":61,"k":"melody","v":0.27,"note":12},{"x":24.203,"len":0.92,"m":73,"k":"melody","v":0.48,"note":12},{"x":25.125,"len":0.75,"m":61,"k":"melody","v":0.39,"note":12},{"x":25.203,"len":1.99,"m":73,"k":"melody","v":1.0,"note":12},{"x":26.125,"len":0.31,"m":61,"k":"melody","v":0.14,"note":12},{"x":26.211,"len":1.1,"m":61,"k":"melody","v":0.57,"note":12},{"x":27.125,"len":0.28,"m":61,"k":"melody","v":0.13,"note":12},{"x":27.211,"len":1.14,"m":73,"k":"melody","v":0.57,"note":12},{"x":28.125,"len":0.61,"m":61,"k":"melody","v":0.31,"note":12},{"x":28.211,"len":2.12,"m":61,"k":"melody","v":1.0,"note":12},{"x":29.125,"len":0.45,"m":61,"k":"melody","v":0.22,"note":12},{"x":29.219,"len":1.08,"m":73,"k":"melody","v":0.5,"note":12},{"x":30.125,"len":0.58,"m":61,"k":"melody","v":0.29,"note":12},{"x":30.219,"len":1.0,"m":73,"k":"melody","v":0.44,"note":12},{"x":31.125,"len":0.69,"m":61,"k":"melody","v":0.35,"note":12},{"x":31.219,"len":0.89,"m":73,"k":"melody","v":0.36,"note":12}],"drums":[{"x":0.0,"k":1,"f":249.54,"lvl":0.4},{"x":0.0,"k":2,"f":1332.39,"lvl":0.41},{"x":0.0,"k":3,"f":499.08,"lvl":0.99},{"x":3.0,"k":2,"f":998.16,"lvl":0.25},{"x":5.333,"k":1,"f":249.54,"lvl":0.25},{"x":6.0,"k":2,"f":1332.39,"lvl":0.33},{"x":6.4,"k":3,"f":889.26,"lvl":0.4},{"x":9.0,"k":2,"f":889.26,"lvl":0.25},{"x":9.6,"k":3,"f":560.2,"lvl":0.36},{"x":10.667,"k":1,"f":209.84,"lvl":0.32},{"x":11.429,"k":4,"f":2991.11,"lvl":0.03},{"x":12.0,"k":2,"f":1332.39,"lvl":0.25},{"x":12.8,"k":3,"f":839.35,"lvl":0.33},{"x":13.714,"k":4,"f":2991.11,"lvl":0.17},{"x":16.0,"k":1,"f":249.54,"lvl":0.4},{"x":16.0,"k":2,"f":998.16,"lvl":0.4},{"x":16.0,"k":3,"f":666.19,"lvl":0.62},{"x":16.0,"k":4,"f":2991.11,"lvl":0.45},{"x":18.286,"k":4,"f":2991.11,"lvl":0.36},{"x":19.0,"k":2,"f":1332.39,"lvl":0.25},{"x":20.572,"k":4,"f":2991.11,"lvl":0.43},{"x":21.333,"k":1,"f":249.54,"lvl":0.25},{"x":22.0,"k":2,"f":839.35,"lvl":0.32},{"x":22.4,"k":3,"f":560.2,"lvl":0.27},{"x":22.857,"k":4,"f":2515.21,"lvl":0.47},{"x":25.0,"k":2,"f":1120.4,"lvl":0.25},{"x":25.143,"k":4,"f":2515.21,"lvl":0.51},{"x":25.6,"k":3,"f":666.19,"lvl":0.26},{"x":26.667,"k":1,"f":209.84,"lvl":0.32},{"x":27.429,"k":4,"f":2515.21,"lvl":0.54},{"x":28.0,"k":2,"f":839.35,"lvl":0.25},{"x":28.8,"k":3,"f":839.35,"lvl":0.25},{"x":29.714,"k":4,"f":2515.21,"lvl":0.56}],"genes":[3,3,5,7,11]},"drums":{"bar0":72,"bars":2,"key":3,"minor":0,"arc":[0.909,0.928],"mood":1.0,"notes":[{"x":0.125,"len":1.81,"m":83,"k":"melody","v":0.89,"note":22},{"x":1.133,"len":0.91,"m":71,"k":"melody","v":0.37,"note":22},{"x":2.133,"len":0.79,"m":83,"k":"melody","v":0.29,"note":22},{"x":3.133,"len":1.07,"m":83,"k":"melody","v":0.45,"note":22},{"x":4.141,"len":0.56,"m":64,"k":"melody","v":0.17,"note":15},{"x":5.141,"len":0.49,"m":76,"k":"melody","v":0.13,"note":15},{"x":5.333,"len":30.88,"m":52,"k":"choir","v":0.82,"note":-9},{"x":5.333,"len":30.88,"m":73,"k":"choir","v":0.82,"note":0},{"x":6.141,"len":0.67,"m":76,"k":"melody","v":0.25,"note":15},{"x":7.148,"len":0.45,"m":76,"k":"melody","v":0.15,"note":15},{"x":8.148,"len":0.49,"m":76,"k":"melody","v":0.19,"note":15},{"x":9.148,"len":1.02,"m":76,"k":"melody","v":0.51,"note":15},{"x":10.156,"len":0.67,"m":76,"k":"melody","v":0.33,"note":27},{"x":10.667,"len":30.18,"m":76,"k":"choir","v":0.8,"note":3},{"x":10.667,"len":30.18,"m":76,"k":"choir","v":0.8,"note":3},{"x":11.156,"len":0.79,"m":76,"k":"melody","v":0.41,"note":27},{"x":12.156,"len":1.77,"m":76,"k":"melody","v":0.96,"note":27},{"x":13.164,"len":1.02,"m":88,"k":"melody","v":0.53,"note":27},{"x":14.164,"len":1.09,"m":76,"k":"melody","v":0.57,"note":27},{"x":15.164,"len":1.14,"m":76,"k":"melody","v":0.57,"note":27},{"x":16.164,"len":2.13,"m":76,"k":"melody","v":1.0,"note":27},{"x":17.172,"len":1.09,"m":76,"k":"melody","v":0.51,"note":27},{"x":18.172,"len":1.01,"m":76,"k":"melody","v":0.45,"note":27},{"x":19.172,"len":1.57,"m":76,"k":"melody","v":0.74,"note":27},{"x":20.18,"len":0.79,"m":73,"k":"melody","v":0.29,"note":24},{"x":21.18,"len":0.67,"m":73,"k":"melody","v":0.22,"note":24},{"x":21.333,"len":45.52,"m":61,"k":"choir","v":1.0,"note":0},{"x":21.333,"len":45.52,"m":64,"k":"choir","v":1.0,"note":3},{"x":22.18,"len":0.86,"m":73,"k":"melody","v":0.33,"note":24},{"x":23.188,"len":0.49,"m":73,"k":"melody","v":0.13,"note":24},{"x":24.188,"len":0.44,"m":73,"k":"melody","v":0.13,"note":24},{"x":25.188,"len":0.71,"m":73,"k":"melody","v":0.29,"note":24},{"x":26.195,"len":0.49,"m":73,"k":"melody","v":0.19,"note":24},{"x":27.195,"len":0.57,"m":73,"k":"melody","v":0.26,"note":24},{"x":28.195,"len":1.27,"m":73,"k":"melody","v":0.66,"note":24},{"x":29.203,"len":0.79,"m":85,"k":"melody","v":0.41,"note":24},{"x":30.203,"len":0.92,"m":73,"k":"melody","v":0.48,"note":24},{"x":31.203,"len":1.02,"m":73,"k":"melody","v":0.54,"note":24}],"drums":[{"x":0.0,"k":1,"f":249.54,"lvl":0.4},{"x":0.0,"k":2,"f":998.16,"lvl":0.4},{"x":0.0,"k":3,"f":839.35,"lvl":0.43},{"x":0.0,"k":4,"f":2991.11,"lvl":0.98},{"x":2.286,"k":4,"f":2991.11,"lvl":0.61},{"x":3.0,"k":2,"f":1332.39,"lvl":0.25},{"x":4.572,"k":4,"f":2991.11,"lvl":0.61},{"x":5.333,"k":1,"f":249.54,"lvl":0.25},{"x":6.0,"k":2,"f":998.16,"lvl":0.32},{"x":6.4,"k":3,"f":666.19,"lvl":0.21},{"x":6.857,"k":4,"f":2991.11,"lvl":0.61},{"x":9.0,"k":2,"f":1332.39,"lvl":0.25},{"x":9.143,"k":4,"f":2991.11,"lvl":0.61},{"x":9.6,"k":3,"f":499.08,"lvl":0.21},{"x":10.667,"k":1,"f":249.54,"lvl":0.32},{"x":11.429,"k":4,"f":2991.11,"lvl":0.61},{"x":12.0,"k":2,"f":998.16,"lvl":0.25},{"x":12.8,"k":3,"f":666.19,"lvl":0.2},{"x":13.714,"k":4,"f":2991.11,"lvl":0.62},{"x":16.0,"k":1,"f":249.54,"lvl":0.4},{"x":16.0,"k":2,"f":1332.39,"lvl":0.4},{"x":16.0,"k":3,"f":499.08,"lvl":0.41},{"x":16.0,"k":4,"f":2991.11,"lvl":0.99},{"x":18.286,"k":4,"f":2991.11,"lvl":0.57},{"x":19.0,"k":2,"f":998.16,"lvl":0.25},{"x":20.572,"k":4,"f":2991.11,"lvl":0.53},{"x":21.333,"k":1,"f":249.54,"lvl":0.25},{"x":22.0,"k":2,"f":1332.39,"lvl":0.32},{"x":22.4,"k":3,"f":499.08,"lvl":0.2},{"x":22.857,"k":4,"f":2991.11,"lvl":0.49},{"x":25.0,"k":2,"f":998.16,"lvl":0.25},{"x":25.143,"k":4,"f":2991.11,"lvl":0.46},{"x":25.6,"k":3,"f":666.19,"lvl":0.2},{"x":26.667,"k":1,"f":249.54,"lvl":0.32},{"x":27.429,"k":4,"f":2991.11,"lvl":0.43},{"x":28.0,"k":2,"f":1332.39,"lvl":0.25},{"x":28.8,"k":3,"f":839.35,"lvl":0.2},{"x":29.714,"k":4,"f":2991.11,"lvl":0.41}],"genes":[3,3,5,7,11]},"rows":[{"t":0,"s0":[0,3,0,5,0,1,7,4,5],"s1":[0,2,7,10,2,5,2,0,7],"s2":[3,4,7,3,4,7,2,4,6]},{"t":30,"s0":[0,0,7,0,3,1,7,4,5],"s1":[0,2,7,10,2,2,4,0,7],"s2":[3,4,5,3,4,7,16,13,6]},{"t":60,"s0":[0,3,7,0,3,7,3,16,5],"s1":[0,2,7,4,7,2,4,0,7],"s2":[0,4,5,1,22,13,4,13,6]},{"t":120,"s0":[3,4,0,3,14,22,13,5,13],"s1":[7,5,1,4,7,2,4,6,7],"s2":[0,9,0,15,7,16,4,3,7]},{"t":240,"s0":[0,4,3,15,10,16,13,14,14],"s1":[0,0,22,7,16,4,13,7,7],"s2":[9,19,3,13,13,5,15,14,17]},{"t":479,"s0":[19,3,14,19,23,12,8,26,9],"s1":[4,31,13,13,0,23,24,19,7],"s2":[15,11,22,15,14,24,26,14,29]}],"changed":1157,"total":3134};
+(function () {
+  const NS = 'http://www.w3.org/2000/svg', css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue('--' + k).trim();
+  const el = (p, tag, a, txt) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; p.appendChild(e); return e; };
+  const line = (s, x1, y1, x2, y2, col, w, ex) => el(s, 'line', Object.assign({ x1, y1, x2, y2, stroke: col, 'stroke-width': w || 1 }, ex || {}));
+  const text = (s, x, y, t, a) => el(s, 'text', Object.assign({ x, y, fill: C('muted'), 'font-size': 11 }, a || {}), t);
+  const $ = id => document.getElementById(id);
+  const W = 860, HS = 4.5;                    // half a staff space
+  const KCOL = { melody: C('ink'), low: C('sky'), choir: C('teal'), solo: C('orange') };
+  const NAMES = ['C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B', 'C'];
+  const FLAT_NAMES = ['D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B', 'C'];
+  // key: past's pitch class (0 = C#); flats for the flat keys
+  function useFlats(key, minor) { const r = (1 + key) % 12; return minor ? [2, 7, 0, 5, 10, 3].includes(r) : [5, 10, 3, 8, 1].includes(r) && r !== 1; }
+  function keyName(key, minor) { return (useFlats(key, minor) ? FLAT_NAMES : NAMES)[((key % 12) + 12) % 12] + (minor ? ' minor' : ' major'); }
+  function spell(m, flats) {
+    const pc = ((m % 12) + 12) % 12, oct = Math.floor(m / 12) - 1;
+    const S = [[0, ''], [0, '♯'], [1, ''], [1, '♯'], [2, ''], [3, ''], [3, '♯'], [4, ''], [4, '♯'], [5, ''], [5, '♯'], [6, '']];
+    const F = [[0, ''], [1, '♭'], [1, ''], [2, '♭'], [2, ''], [3, ''], [4, '♭'], [4, ''], [5, '♭'], [5, ''], [6, '♭'], [6, '']];
+    const [L, a] = (flats ? F : S)[pc]; return { D: L + 7 * oct, acc: a };
+  }
+  const mmss = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+
+  /* a grand staff from x0 to x1 at y0; returns y(D) */
+  function grand(s, x0, x1, y0, label) {
+    const yT = D => y0 + (38 - D) * HS, yB0 = y0 + 36 + 54, yB = D => yB0 + (26 - D) * HS;
+    for (let D = 30; D <= 38; D += 2) line(s, x0, yT(D), x1, yT(D), C('staff'));
+    for (let D = 18; D <= 26; D += 2) line(s, x0, yB(D), x1, yB(D), C('staff'));
+    line(s, x0, yT(38), x0, yB(18), C('staff'));
+    text(s, x0 + 4, yT(31) + 6, '𝄞', { 'font-size': 40, fill: C('ink') });
+    text(s, x0 + 5, yB(23) + 8, '𝄢', { 'font-size': 30, fill: C('ink') });
+    if (label) text(s, x0, y0 - 26, label, { fill: C('ink'), 'font-size': 12 });
+    return { y: D => D >= 28 ? yT(D) : yB(D), treble: D => D >= 28, yT, yB, top: yT(38), bot: yB(18) };
+  }
+  function ledgers(s, g, x, D) {
+    const L = [];
+    if (D >= 28) { if (D <= 28) for (let d = 28; d >= D; d -= 2) L.push(g.yT(d)); if (D >= 40) for (let d = 40; d <= D; d += 2) L.push(g.yT(d)); }
+    else { if (D <= 16) for (let d = 16; d >= D; d -= 2) L.push(g.yB(d)); }
+    L.forEach(y => line(s, x - 8, y, x + 8, y, C('staff')));
+  }
+  /* accs: the accidentals in force in this bar (D -> sign), or null to mark every note */
+  function head(s, g, x, m, flats, col, op, accs) {
+    const { D, acc } = spell(m, flats), y = g.y(D);
+    ledgers(s, g, x, D);
+    el(s, 'ellipse', { cx: x, cy: y, rx: 5.2, ry: 3.7, transform: `rotate(-20 ${x} ${y})`, fill: col, opacity: op });
+    let show = acc;
+    if (accs) {
+      const prev = accs.has(D) ? accs.get(D) : '';
+      show = acc === prev ? '' : (acc || '♮');
+      accs.set(D, acc);
+    }
+    if (show) text(s, x - 9, y + 4, show, { 'text-anchor': 'end', fill: col, 'font-size': 13, opacity: Math.max(op, 0.6) });
+    return { D, y };
+  }
+
+  /* a time-space score: notes [{x (16ths), len, m, k, v, changed}] over nbars, 4 bars per system */
+  function score(svgId, ex, opts) {
+    opts = opts || {};
+    const s = $(svgId), per = opts.perSystem || 4, flats = useFlats(ex.key, ex.minor), sys = Math.ceil(ex.bars / per);
+    const x0 = 20, x1 = W - 10, head0 = 58, sysH = 262;
+    let y = 40;
+    const kl = ex.mood < 0.5 ? 'key: ' + NAMES[((ex.key % 12) + 12) % 12] + ' (mood dark: Phrygian / in masks)' : 'key: ' + keyName(ex.key, ex.minor);
+    text(s, x0, 18, kl + (opts.title ? ' · ' + opts.title : ''), { fill: C('ink'), 'font-size': 12 });
+    for (let k = 0; k < sys; k++) {
+      const b0 = k * per, nb = Math.min(per, ex.bars - b0), xs = x0 + head0, xe = xs + (x1 - xs) * nb / per;
+      const g = grand(s, x0, xe, y + 46);
+      const X = t => xs + (t - b0 * 16) / (per * 16) * (x1 - xs);
+      for (let b = 0; b <= nb; b++) {
+        const xb = X((b0 + b) * 16); line(s, xb, g.top, xb, g.bot, C('staff'), b === 0 ? 1 : 1);
+        if (b < nb) { const bn = ex.bar0 + b0 + b; text(s, xb + 3, g.top - 34, (bn + 1) + '  ' + mmss(bn * 131072 / 44100), { 'font-size': 10 }); }
+        if (b < nb) for (let q = 1; q < 16; q++) if (q % 4 === 0) line(s, X((b0 + b) * 16 + q), g.top - 3, X((b0 + b) * 16 + q), g.top, C('faint'));
+      }
+      const notes = ex.notes.filter(n => n.x >= b0 * 16 && n.x < (b0 + nb) * 16).sort((a, b) => a.x - b.x || a.m - b.m);
+      let prev = null, accBar = -1, accs = null;
+      notes.forEach(n => {
+        const nbar = Math.floor(n.x / 16);
+        if (nbar !== accBar) { accBar = nbar; accs = new Map(); }
+        const col = n.changed ? C('rose') : KCOL[n.k], op = 0.35 + 0.65 * n.v;
+        let x = X(n.x);
+        const sp = spell(n.m, flats);
+        if (prev && Math.abs(prev.x - n.x) < 0.01 && Math.abs(prev.D - sp.D) === 1) x += 10;
+        const end = Math.min(X(n.x + n.len), xe);
+        const hy = head(s, g, x, n.m, flats, col, op, accs);
+        if (end > x + 6) line(s, x + 5, hy.y, end, hy.y, col, 1.4, { opacity: op * 0.55 });
+        prev = { x: n.x, D: sp.D };
+      });
+      y += sysH;
+    }
+    s.setAttribute('viewBox', `0 0 ${W} ${y - 10}`);
+  }
+
+  /* rhythm rows: [{name, col, hits:[{x, s}]}] over nbars */
+  function rhythm(s, rows, nbars, y0, opts) {
+    opts = opts || {};
+    const x0 = 130, x1 = W - 14, X = t => x0 + t / (nbars * 16) * (x1 - x0);
+    for (let b = 0; b <= nbars; b++) line(s, X(b * 16), y0 - 10, X(b * 16), y0 + rows.length * 30 - 10, C('staff'), 1.2);
+    for (let q = 0; q < nbars * 16; q++) line(s, X(q), y0 - 10, X(q), y0 + rows.length * 30 - 10, C('rule'), q % 4 ? 0.5 : 1);
+    rows.forEach((r, i) => {
+      const yy = y0 + i * 30 + 5;
+      line(s, x0, yy, x1, yy, C('faint'), 0.8);
+      text(s, x0 - 10, yy + 4, r.name, { 'text-anchor': 'end', 'font-size': 12, fill: r.col });
+      r.hits.forEach(h => el(s, 'circle', { cx: X(h.x), cy: yy, r: 2.5 + 5 * (h.s == null ? 1 : h.s), fill: r.col, opacity: h.ghost ? 0.45 : 0.95 }));
+    });
+    return y0 + rows.length * 30;
+  }
+
+  /* evenly spaced notes on a grand staff: groups [{label, notes:[{m, col, txt}]}] */
+  function even(svgId, groups, flats, opts) {
+    opts = opts || {};
+    const s = $(svgId), x0 = 20, x1 = W - 10, g = grand(s, x0, x1, 46);
+    const n = groups.reduce((a, gr) => a + gr.notes.length, 0) + groups.length - 1;
+    const dx = (x1 - x0 - 70) / Math.max(n, 1);
+    let x = x0 + 70 + dx / 2;
+    groups.forEach((gr, gi) => {
+      if (gr.label) text(s, x - dx / 2 + 2, 26, gr.label, { fill: C('ink'), 'font-size': 12 });
+      gr.notes.forEach(nt => {
+        const h = head(s, g, x, nt.m, flats, nt.col || C('ink'), nt.op == null ? 1 : nt.op);
+        if (nt.r) el(s, 'circle', { cx: x, cy: h.y, r: nt.r, fill: 'none', stroke: nt.col, opacity: 0.5 });
+        if (nt.txt) text(s, x, g.bot + 22, nt.txt, { 'text-anchor': 'middle', 'font-size': 10 });
+        if (nt.txt2) text(s, x, g.bot + 35, nt.txt2, { 'text-anchor': 'middle', 'font-size': 10 });
+        x += dx;
+      });
+      if (gi < groups.length - 1) { line(s, x - dx / 2, g.top, x - dx / 2, g.bot, C('staff')); x += dx; }
+    });
+    s.setAttribute('viewBox', `0 0 ${W} ${g.bot + (opts.extra || 44)}`);
+  }
+
+  const D = DATA;
+  $('n-changed').textContent = D.changed.toLocaleString(); $('n-total').textContent = D.total.toLocaleString();
+
+  /* rows */
+  even('sc-rows', D.rows.map(r => ({ label: mmss(r.t), notes: r.s0.map(v => ({ m: 49 + 12 + v })) })), false, { extra: 20 });
+
+  /* opening, entrance */
+  score('sc-opening', D.opening, { title: 'the opening' });
+  score('sc-entrance', D.entrance, { title: 'the choir enters' });
+
+  /* raw vs heard */
+  (function () {
+    const raw = D.full_raw, heard = JSON.parse(JSON.stringify(D.full));
+    heard.notes.forEach((n, i) => { const r = raw.notes[i]; if (r && r.x === n.x && r.note !== n.note) n.changed = true; });
+    const s = $('sc-raw');
+    // draw two 2-bar systems by reusing score() into separate groups
+    const tmp1 = document.createElementNS(NS, 'svg'), tmp2 = document.createElementNS(NS, 'svg');
+    tmp1.id = 'tmp-raw'; tmp2.id = 'tmp-heard'; document.body.appendChild(tmp1); document.body.appendChild(tmp2);
+    score('tmp-raw', raw, { perSystem: 2, title: 'past as written (harmony off)' });
+    score('tmp-heard', heard, { perSystem: 2, title: 'as heard (snapped)' });
+    const g1 = el(s, 'g', {}), g2 = el(s, 'g', { transform: 'translate(0 300)' });
+    while (tmp1.firstChild) g1.appendChild(tmp1.firstChild);
+    while (tmp2.firstChild) g2.appendChild(tmp2.firstChild);
+    tmp1.remove(); tmp2.remove();
+    s.setAttribute('viewBox', `0 0 ${W} 600`);
+  })();
+
+  /* masks on C# */
+  (function () {
+    const masks = [['major', [0, 2, 4, 5, 7, 9, 11]], ['minor', [0, 2, 3, 5, 7, 8, 10]], ['major pent.', [0, 2, 4, 7, 9]], ['minor pent.', [0, 3, 5, 7, 10]], ['Phrygian', [0, 1, 3, 5, 7, 8, 10]], ['in', [0, 1, 5, 7, 8]]];
+    even('sc-masks', masks.map(([nm, iv], i) => ({ label: nm, notes: iv.map(v => ({ m: 61 + v, col: i >= 4 ? C('rose') : i >= 2 ? C('teal') : C('ink') })) })), false, { extra: 16 });
+  })();
+
+  /* drums: from the log, plus harm's thump / blip / tick from their rules */
+  (function () {
+    const ex = D.drums, s = $('sc-drums'), nb = ex.bars, rows = [];
+    const by = k => ex.drums.filter(d => d.k === k).map(d => ({ x: d.x, s: Math.min(1, d.lvl) }));
+    const thump = [], blip = [], tick = [];
+    for (let b = 0; b < nb; b++) {
+      const bar = ex.bar0 + b, arc = ex.arc[b];
+      if (bar >= 2) thump.push({ x: b * 16, s: 1 });
+      if (arc > 0.3) blip.push({ x: b * 16 + 6, s: 0.5 });
+      if (arc > 0.5) {
+        const HB = 131072, T = ex.genes[4];
+        for (let m = 0; m < T; m++) for (let q = 0; q < 8; q++) {
+          const a0 = m * HB / T, a1 = a0 + 819, b0 = q * HB / 8, b1 = b0 + 0.3 * HB / 8, lo = Math.max(a0, b0), hi = Math.min(a1, b1);
+          if (hi > lo) tick.push({ x: b * 16 + lo / 8192, s: 0.4 });
+        }
+      }
+    }
+    rows.push({ name: 'harm thump (1)', col: C('ink'), hits: thump });
+    rows.push({ name: 'log drum (3)', col: C('orange'), hits: by(1) });
+    rows.push({ name: 'rim (3+3+3+3+4)', col: C('green'), hits: by(2) });
+    rows.push({ name: 'bell (5)', col: C('sky'), hits: by(3) });
+    rows.push({ name: 'tick (7)', col: C('teal'), hits: by(4) });
+    rows.push({ name: 'harm blip', col: C('muted'), hits: blip });
+    rows.push({ name: 'harm tick (11:8)', col: C('rose'), hits: tick });
+    text(s, 130, 16, `bars ${ex.bar0 + 1}–${ex.bar0 + nb} · ${mmss(ex.bar0 * 131072 / 44100)} · key ${keyName(ex.key, ex.minor)}`, { fill: C('ink'), 'font-size': 12 });
+    const yEnd = rhythm(s, rows, nb, 40);
+    s.setAttribute('viewBox', `0 0 ${W} ${yEnd + 10}`);
+  })();
+
+  /* tick drift */
+  (function () {
+    const s = $('sc-tick'), x0 = 50, x1 = W - 20, y0 = 20, y1 = 180, X = h => x0 + h / 12 * (x1 - x0), Y = v => y1 - (v - 0.8) / (3.4 - 0.8) * (y1 - y0);
+    const pts = []; for (let h = 0; h <= 12; h += 0.02) { const min = h * 60, tper = Math.max(8192, 26384 - 30 * min); pts.push(X(h).toFixed(1) + ' ' + Y(tper / 8192).toFixed(1)); }
+    [1, 2, 3].forEach(v => { line(s, x0, Y(v), x1, Y(v), C('rule')); text(s, x0 - 8, Y(v) + 4, v, { 'text-anchor': 'end' }); });
+    el(s, 'path', { d: 'M' + pts.join(' L'), fill: 'none', stroke: C('orange'), 'stroke-width': 2 });
+    for (let h = 0; h <= 12; h += 2) text(s, X(h), y1 + 18, h + ' h', { 'text-anchor': 'middle' });
+    text(s, X(10.1), Y(1) - 10, 'locks to the sixteenth at ~10 h', { 'text-anchor': 'middle', fill: C('ink') });
+    text(s, x0, 14, 'tick length in sixteenths', { fill: C('ink') });
+    s.setAttribute('viewBox', `0 0 ${W} 210`);
+  })();
+
+  /* minute form over one 8-minute section */
+  (function () {
+    const s = $('sc-minute'), x0 = 150, x1 = W - 14, X = t => x0 + t / 480 * (x1 - x0);
+    const rows = [
+      ['melody A', C('ink'), t => t % 60 < 20],
+      ['melody B (flam)', C('ink'), t => Math.floor(t / 60) % 8 < 4],
+      ['melody C (drift)', C('ink'), t => t % 60 < 45],
+      ['low figures', C('sky'), t => t % 60 < 25],
+      ['bass pairs / choir', C('teal'), t => { const m = Math.floor(t / 60) % 8, sec = Math.floor(t % 60); return (m >= 1 && m <= 3) || ((m === 4 || m === 5) && sec % 15 === 0); }],
+      ['solo (first 54 s)', C('orange'), t => t < 54]];
+    rows.forEach(([nm, col, f], i) => {
+      const y = 20 + i * 24;
+      text(s, x0 - 10, y + 12, nm, { 'text-anchor': 'end', 'font-size': 12, fill: col });
+      for (let t = 0; t < 480; t += 1) if (f(t)) el(s, 'rect', { x: X(t), y, width: (x1 - x0) / 480 + 0.4, height: 14, fill: col, opacity: 0.75 });
+    });
+    for (let m = 0; m <= 8; m++) { line(s, X(m * 60), 14, X(m * 60), 20 + rows.length * 24, C('faint')); text(s, X(m * 60), 30 + rows.length * 24, m + ':00', { 'text-anchor': 'middle' }); }
+    s.setAttribute('viewBox', `0 0 ${W} ${44 + rows.length * 24}`);
+  })();
+
+  /* mutations: two bars before / after, built from the rules */
+  (function () {
+    const s = $('sc-mut');
+    const onsets = n => Array.from({ length: n * 2 }, (_, k) => ({ x: k * 16 / n }));
+    const groups = g => { const o = []; for (let b = 0; b < 2; b++) for (let st = 0; st + g <= 16; st += g) o.push({ x: b * 16 + st }); return o; };
+    text(s, 130, 16, '6:59 · right echoes 7 → 13', { fill: C('ink'), 'font-size': 12 });
+    let y = rhythm(s, [{ name: 'right echoes, before', col: C('teal'), hits: onsets(7) }, { name: 'right echoes, after', col: C('rose'), hits: onsets(13) }, { name: 'left echoes (5)', col: C('sky'), hits: onsets(5) }], 2, 40);
+    text(s, 130, y + 26, '14:33 · past\'s accents 3+3+3+3+4 → 7+9', { fill: C('ink'), 'font-size': 12 });
+    y = rhythm(s, [{ name: 'accents, before', col: C('green'), hits: groups(3) }, { name: 'accents, after', col: C('rose'), hits: groups(7) }, { name: 'choir (3)', col: C('orange'), hits: onsets(3) }], 2, y + 50);
+    s.setAttribute('viewBox', `0 0 ${W} ${y + 8}`);
+  })();
+
+  /* spectrum of a voice */
+  (function () {
+    // slot 6: N = 8 partials, k = 0..7; written note C#4 = past note 12 (f = 280.1 Hz), j even so m = 1
+    const f = 280.11, N = 8, sum = N * (N - 1) / 2, notes = [];
+    for (let k = 1; k < N; k++) {
+      const freq = k % 2 ? k * f / 4 : k * f, harm = k % 2 ? k : 4 * k, w = (N - k) / sum;
+      const mid = 69 + 12 * Math.log2(freq / 440) - 0.18, m = Math.round(mid);   // against the piece's own tuning (+18 c)
+      notes.push({ freq, m, cents: Math.round(100 * (mid - m)), harm, w, odd: k % 2 });
+    }
+    notes.sort((a, b) => a.freq - b.freq);
+    even('sc-spectrum', [{ label: 'partials (low → high)', notes: notes.map(n => ({ m: n.m, col: n.odd ? C('teal') : C('ink'), r: 4 + 26 * n.w, txt: 'h' + n.harm, txt2: (n.cents > 0 ? '+' : '') + n.cents + '¢' })) }], false, { extra: 50 });
+  })();
+
+  /* drum pitches in C# minor (key 0) */
+  (function () {
+    const R = 280.1, fold = (f, lo) => { while (f >= 2 * lo) f /= 2; while (f < lo) f *= 2; return f; }, M = f => Math.round(69 + 12 * Math.log2(f / 440));
+    const st = n => Math.pow(2, n / 12);
+    const g = [
+      { label: 'thump (root, 8va)', notes: [{ m: M(fold(R, 55)) + 12, col: C('ink') }] },
+      { label: 'log drum (5th)', notes: [{ m: M(fold(R * st(7), 150)), col: C('orange') }] },
+      { label: 'rim (root / 5th)', notes: [{ m: M(fold(R, 700)), col: C('green') }, { m: M(fold(R * st(7), 700)), col: C('green') }] },
+      { label: 'bell (3rd, 5th, 8ve, root)', notes: [3, 7, 12, 0].map(v => ({ m: M(fold(R * st(v), 450)), col: C('sky') })) },
+      { label: 'harm tick (5th)', notes: [{ m: M(fold(R * st(7), 700)), col: C('rose') }] }];
+    even('sc-drumpitch', g, false, { extra: 16 });
+  })();
+
+  /* echoes */
+  (function () {
+    const s = $('sc-echo');
+    const y = rhythm(s, [
+      { name: 'the note', col: C('ink'), hits: [{ x: 0 }] },
+      { name: 'left echoes (5)', col: C('orange'), hits: [1 / 20, 1 / 10, 1 / 5, 3 / 10, 7 / 20].map(f => ({ x: f * 16, s: 0.6 })) },
+      { name: 'right echoes (7)', col: C('teal'), hits: [1 / 14, 1 / 7, 2 / 7].map(f => ({ x: f * 16, s: 0.6 })) }], 1, 30);
+    s.setAttribute('viewBox', `0 0 ${W} ${y + 6}`);
+  })();
+
+  /* arc */
+  (function () {
+    const s = $('sc-arc'), T = 600, x0 = 50, x1 = W - 20, X = t => x0 + t / T * (x1 - x0), Y = v => 170 - v * 140, cap = [], mood = [];
+    for (let t = 0; t <= T; t++) {
+      let w = 0.5 - 0.5 * Math.cos(2 * Math.PI * t / 150); w *= 0.8 + 0.2 * (0.5 - 0.5 * Math.cos(2 * Math.PI * t / 330));
+      let c = 2 + Math.round(14 * w); const x = Math.min(Math.max((t - 20) / 180, 0), 1), m = x * x * (3 - 2 * x); if (m < 0.3 && c > 1) c--;
+      cap.push(X(t).toFixed(1) + ' ' + Y(c / 16).toFixed(1)); mood.push(X(t).toFixed(1) + ' ' + Y(m).toFixed(1));
+    }
+    line(s, x0, 170, x1, 170, C('faint'));
+    el(s, 'path', { d: 'M' + cap.join(' L'), fill: 'none', stroke: C('orange'), 'stroke-width': 1.6 });
+    el(s, 'path', { d: 'M' + mood.join(' L'), fill: 'none', stroke: C('teal'), 'stroke-width': 2 });
+    for (let m = 0; m <= 10; m++) text(s, X(m * 60), 188, m + ':00', { 'text-anchor': 'middle' });
+    text(s, x0, 18, 'voices allowed (of 16)', { fill: C('orange') }); text(s, x0 + 160, 18, 'mood', { fill: C('teal') });
+    s.setAttribute('viewBox', `0 0 ${W} 198`);
+  })();
+})();
+</script>
+</body>
+</html>

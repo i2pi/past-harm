@@ -28,7 +28,11 @@ tools/render: tools/render.c key.c reverb.c reverb.h past_engine.o harm_fx.o
 tools/glasslab: tools/glasslab.c main.c audio.c key.c reverb.c title.c past_engine.o harm_fx.o
 	$(CC) $(CFLAGS) -DPDIR='"$(CURDIR)"' -I. -o $@ tools/glasslab.c audio.c key.c reverb.c title.c past_engine.o harm_fx.o $(LIBS)
 
+# logs the notes and drums for the musicians' page: tools/musiclog [-noharmony] from_s to_s
+tools/musiclog: tools/musiclog.c key.c key.h past_engine.o
+	$(CC) $(ENGINE_CFLAGS) -o $@ tools/musiclog.c key.c past_engine.o -lm
+
 clean:
-	rm -f p10m1-past tools/render tools/glasslab past_engine.o harm_fx.o *.ppm
+	rm -f p10m1-past tools/render tools/glasslab tools/musiclog past_engine.o harm_fx.o *.ppm
 
 .PHONY: all clean
