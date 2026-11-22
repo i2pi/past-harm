@@ -1,0 +1,13 @@
+# build products
+*.o
+p10m1-past
+tools/render
+tools/glasslab
+build/
+# renders and test frames
+renders/
+*.ppm
+*.wav
+*.mp4
+.DS_Store
+*.swp
