@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAST HARM — technical statement</title>
+<style>
+@font-face { font-family: "D-DIN"; src: url("fonts/D-DIN.otf") format("opentype"); font-weight: 400; }
+@font-face { font-family: "D-DIN"; src: url("fonts/D-DIN-Bold.otf") format("opentype"); font-weight: 700; }
+:root {
+  --bg: #0b0c0e; --panel: #121418; --rule: #23262c;
+  --ink: #dcd8cf; --muted: #8b8f96; --faint: #4a4e55;
+  --orange: #e0782b; --teal: #3aa7a3; --blue: #2f7de1; --sky: #8fc4ff; --rose: #d4567a;
+  --code-bg: #0f1114; --code-ink: #c9c5bb;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.6 "D-DIN", "DIN Alternate", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 0 20px 120px; }
+header.title { padding: 96px 0 48px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; }
+header.title h1 { font-size: 92px; line-height: .86; margin: 0; font-weight: 700; letter-spacing: .02em; }
+header.title .credit { margin-top: 18px; color: var(--muted); font-size: 15px; letter-spacing: .04em; }
+header.title p.lede { margin-top: 36px; font-size: 20px; max-width: 680px; }
+h2 { font-size: 30px; margin: 72px 0 8px; font-weight: 700; letter-spacing: .01em; }
+h2 .n { color: var(--orange); margin-right: 12px; font-variant-numeric: tabular-nums; }
+h3 { font-size: 20px; margin: 36px 0 6px; font-weight: 700; color: var(--ink); }
+p { margin: 12px 0; }
+a { color: var(--sky); }
+em { color: #fff; font-style: normal; border-bottom: 1px solid var(--faint); }
+.math { font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-size: 18px; color: #fff;
+  background: var(--panel); border-left: 2px solid var(--orange); padding: 10px 16px; margin: 16px 0; overflow-x: auto; }
+.math i { font-style: italic; }
+nav.toc { columns: 2; column-gap: 32px; font-size: 15px; color: var(--muted); }
+nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 2px 0; }
+nav.toc a:hover { color: var(--ink); }
+figure { margin: 22px 0; }
+figure.svg { background: var(--panel); border: 1px solid var(--rule); padding: 14px 14px 8px; }
+figure.svg svg { display: block; width: 100%; height: auto; }
+figure figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+figure.code { background: var(--code-bg); border: 1px solid var(--rule); }
+figure.code figcaption { margin: 0; padding: 6px 14px; border-bottom: 1px solid var(--rule); font: 12px/1.4 ui-monospace, Menlo, monospace; color: var(--muted); }
+figure.code pre { margin: 0; padding: 14px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--code-ink); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 16px 0; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { color: var(--muted); font-weight: 400; }
+td.num { font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: 15px; }
+svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  header.title { padding-top: 56px; }
+  header.title h1 { font-size: 64px; }
+  nav.toc { columns: 1; }
+  h2 { font-size: 25px; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<header class="title">
+  <h1>PAST<br>HARM</h1>
+  <div class="credit">Joshua Reich · Generative Works 1996–2026 · technical statement</div>
+  <p class="lede">Three programs, written years apart, run as one piece. <em>past</em> (December 2003) is a
+  generative music engine: sixteen oscillators, a few scales and a nest of slow sine waves. <em>harm</em> (2003, rendered
+  2006) is a set of feedback delay networks with drums. <em>p10m1</em> (March 2012) is a feedback picture of
+  rotating cubes. Here past plays, harm listens to it, and the picture reads past's internal state. This page
+  walks through the ideas and the mathematics, starting with the music, with the code quoted directly from the source.</p>
+</header>
+
+<nav class="toc">
+  <a href="#flow">1 · Signal flow</a>
+  <a href="#voices">2 · How a voice is made</a>
+  <a href="#feedback">3 · The cross-coupled filter</a>
+  <a href="#harmony">4 · Scales, keys and harmony</a>
+  <a href="#arc">5 · The arc and the mood</a>
+  <a href="#choir">6 · The choir: PADsynth</a>
+  <a href="#bass">7 · The bass</a>
+  <a href="#poly">8 · Coprime polyrhythms</a>
+  <a href="#mutation">9 · Rhythm that mutates</a>
+  <a href="#harm">10 · harm's delay networks</a>
+  <a href="#reverb">11 · A reverb that fills the gaps</a>
+  <a href="#swells">12 · Long swells and endlessness</a>
+  <a href="#picture">13 · The picture</a>
+  <a href="#glass">14 · Glass</a>
+  <a href="#title">15 · A title that gets eaten</a>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="flow"><span class="n">1</span>Signal flow</h2>
+<p>All the sound comes from one function, <code>past_next()</code>, called 44,100 times a second. Its sample index
+<i>i</i> is the only clock: every slow change in the piece is a function of <i>i</i>, so the piece is deterministic.
+Rendered twice, it is identical to the sample. The picture runs at its own frame rate and reads snapshots of the engine's
+state: which voices sound, their notes and envelopes, the key, the drum hits, the echo gains.</p>
+<figure class="svg"><svg id="fig-flow" viewBox="0 0 820 300" role="img" aria-label="Signal flow diagram"></svg>
+<figcaption>Audio flows left to right, once per sample. The dashed lines are state the picture reads, about 60 times a second.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="voices"><span class="n">2</span>How a voice is made</h2>
+<p>past has sixteen oscillators. A note sets an oscillator's phase increment from its frequency and gives it an
+attack / hold / release envelope. What a voice sounds like depends on its slot <i>j</i>: it sums
+<i>N</i> = 2 + (<i>j</i> mod 7) partials, weighted linearly down from the fundamental:</p>
+<div class="math"><i>w<sub>k</sub></i> = (<i>N</i> − <i>k</i>) / (<i>N</i>(<i>N</i>−1)/2), &nbsp; <i>k</i> = 0 … <i>N</i>−1 &nbsp;&nbsp; (Σ<i>w<sub>k</sub></i> = 1)</div>
+<p>Even partials are plain sines at <i>k</i> times the phase. Odd partials go a quarter as fast, at <i>k</i>/4 times the phase, through
+an <i>arctangent waveshaper</i> whose drive is itself a sine of period 2π·319732 samples, about 45 s:</p>
+<div class="math">odd <i>k</i>: &nbsp; <i>w<sub>k</sub></i> · atan( sin(<i>kφ</i>/4) · 7 sin(<i>i</i>/319732) )</div>
+<p>When the drive is near zero the partial is a soft sine; at full drive the arctangent squares it off and fills it
+with odd harmonics. The drive passes through zero twice a cycle, so every voice slowly breathes between pure and
+buzzing. Odd and even slots are routed to different accumulators (<i>x, y</i> and <i>u, v</i>), which become left
+and right.</p>
+{{voice}}
+<figure class="svg"><svg id="fig-partials" viewBox="0 0 820 260" role="img" aria-label="Partial weights per voice slot"></svg>
+<figcaption>Partial weights for each of the seven voice types (N = 2 … 8). Orange: plain sines (even k). Teal: arctangent-shaped partials (odd k).</figcaption></figure>
+<figure class="svg"><svg id="fig-atan" viewBox="0 0 820 200" role="img" aria-label="Arctangent waveshaping at different drives"></svg>
+<figcaption>atan(sin θ · <i>a</i>) for drive <i>a</i> = 0.5, 2, 7. The drive itself is a slow sine, so the timbre rounds and squares over ~45 s.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="feedback"><span class="n">3</span>The cross-coupled filter</h2>
+<p>Before the output, the two channels are fed back into each other through the previous three samples. The
+coefficients are sines with long, unrelated periods, about 10 s, 30 s, 34 s and 2 min, some offset by the current
+tick. Together they form a time-varying second-order recursive filter in which left drives right and right drives left:</p>
+{{xfb}}
+<p>Because the periods share no common factor, the filter never repeats its settings. The colour and stereo image
+of the whole texture drift endlessly, even while the notes repeat. The output then goes through
+<code>atan(·)/1.6</code>, a soft clipper, so the feedback can never run away. The picture uses these same
+coefficients: the background's radial warp, the blur and the feedback decay all read them.</p>
+
+<!-- ============================================================ -->
+<h2 id="harmony"><span class="n">4</span>Scales, keys and harmony</h2>
+<p>past's melody comes from short scale tables: offsets in semitones such as
+<code>{0, 3, 0, 5, 0, 1, 7, 4, 5}</code>, stepped through by a counter. Notes can collide: with up to sixteen
+voices and three tables, a full passage can stack semitones and tritones. Three additions keep the harmony
+consonant without changing past's choices.</p>
+
+<h3>Finding the key</h3>
+<p>Every 512 samples a 12-bin <em>pitch-class histogram</em> is built from the scale tables and the sounding
+voices, weighted by their envelopes. It is correlated (Pearson's r) against the Krumhansl–Kessler probe-tone
+profiles, rotated to all 12 tonics in major and minor; the best of the 24 is the key. A change of key has to win
+for about 4 s, or by a clear margin, so the key doesn't flicker.</p>
+<div class="math"><i>r</i>(<i>h</i>, <i>p</i>) = Σ(<i>h<sub>i</sub></i>−<i>h̄</i>)(<i>p<sub>i</sub></i>−<i>p̄</i>) / √( Σ(<i>h<sub>i</sub></i>−<i>h̄</i>)² · Σ(<i>p<sub>i</sub></i>−<i>p̄</i>)² )</div>
+{{key}}
+<figure class="svg"><svg id="fig-kk" viewBox="0 0 820 220" role="img" aria-label="Krumhansl-Kessler key profiles"></svg>
+<figcaption>The Krumhansl–Kessler profiles (major in orange, minor in teal): how well each pitch class fits a key, from listening experiments. The tonic, fifth and third stand out.</figcaption></figure>
+
+<h3>Snapping to the key</h3>
+<p>Each new note moves to the nearest pitch in a mask of the key's 12 pitch classes, rounding ties down.
+Which mask depends on how full the music is. With fewer than four voices, the full seven-note scale is allowed. With four or more, only the
+<em>pentatonic</em>, the five notes with no semitone or tritone between any two of them, so a dense chord cannot
+clash. During the opening, while the mood is dark, the masks are <em>Phrygian</em>, minor with a flat second, and
+then the Japanese <em>in</em> scale (root, ♭2, 4, 5, ♭6), which is darker still.</p>
+{{snap}}
+<figure class="svg"><svg id="fig-masks" viewBox="0 0 820 230" role="img" aria-label="Scale masks on the pitch-class circle"></svg>
+<figcaption>The four masks on the chromatic circle, in C. The lines join the allowed pitch classes. The pentatonic has no adjacent pair, which is the property that removes semitone clashes.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="arc"><span class="n">5</span>The arc and the mood</h2>
+<p>How many voices may sound at once follows a raised cosine of period 150 s. Its height is modulated by a second
+raised cosine of period 330 s, so no two swells are the same size. The cap runs from 2 to 16 voices, so the
+piece opens sparse, builds, and thins out again, and the drums, the choir and the bell come in as it rises.</p>
+<div class="math"><i>w</i>(<i>t</i>) = ½(1 − cos 2π<i>t</i>/150) · (0.8 + 0.2·½(1 − cos 2π<i>t</i>/330)), &nbsp;&nbsp; cap = 2 + round(14<i>w</i>)</div>
+{{cap}}
+<p>Over that, the <em>mood</em> rises once, as a smoothstep from 0 to 1 between 0:20 and 3:20. While it is low, the
+notes drop an octave, the harmony uses the dark masks, a single choir voice sings a lament around the root, and the
+whole mix passes through a low-pass filter that starts at 900 Hz and opens (cutoff 900·2<sup>4.5·mood</sup> Hz).
+The piece begins sparse and oppressive and opens out.</p>
+<figure class="svg"><svg id="fig-arc" viewBox="0 0 820 220" role="img" aria-label="Voice cap and mood over ten minutes"></svg>
+<figcaption>The first ten minutes: the voice cap (orange steps) and the mood (teal).</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="choir"><span class="n">6</span>The choir: PADsynth</h2>
+<p>past's long notes, the bass pairs, are sung by a choir. A choir is many voices that are almost, but not quite,
+in tune. Rather than detune a few oscillators, the choir is built in the <em>frequency domain</em>, after Nasca
+Octavian Paul's PADsynth. For a base pitch <i>f</i><sub>0</sub>, each harmonic <i>h</i> becomes a Gaussian band
+whose width grows with <i>h</i>, at saw-wave amplitudes 1/<i>h</i>:</p>
+<div class="math">|<i>X</i>(<i>f</i>)| = Σ<sub><i>h</i></sub> (1/<i>h</i>) · exp(−((<i>f</i> − <i>hf</i><sub>0</sub>)/<i>b<sub>h</sub></i>)²) / √<i>b<sub>h</sub></i>, &nbsp;&nbsp; <i>b<sub>h</sub></i> = (2<sup>c/1200</sup> − 1) · <i>f</i><sub>0</sub> · <i>h</i></div>
+<p>Each frequency bin then gets a <em>random phase</em>, and one inverse FFT of 2<sup>18</sup> points turns the
+whole spectrum into a 5.9-second loop. Because every bin has its own random phase, the loop sounds like many
+singers each slightly off pitch, and it is perfectly seamless. The ensemble is 45 cents wide; the solo voice of
+the opening is 12 cents wide (narrower, so it sounds like one person). One table is built for each octave of base
+pitch, then read at the note's pitch through three vowel formants that drift between "ah" and "oh".</p>
+{{pad}}
+<figure class="svg"><svg id="fig-pad" viewBox="0 0 820 240" role="img" aria-label="PADsynth spectrum"></svg>
+<figcaption>The spectrum of one table (140 Hz, 45 cents). Each harmonic is a Gaussian whose width grows with its number, so the upper harmonics smear into a shimmer while the lower ones stay pitched.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="bass"><span class="n">7</span>The bass</h2>
+<p>Under the choir sits a sub-bass that follows its lowest note, folded by octaves into 20–50 Hz. It is a pure
+fundamental, for weight, plus three voices detuned by −6, 0 and +6 cents. Each detuned voice carries its 2nd and
+3rd harmonics, and because they beat slowly against each other the body moves. It all goes through a tanh
+saturator and a low-pass filter. Its weight, the level, the amount of harmonic body, the drive and the cutoff,
+rides one of the long swells (section 12).</p>
+{{bass}}
+
+<!-- ============================================================ -->
+<h2 id="poly"><span class="n">8</span>Coprime polyrhythms</h2>
+<p>past ticks on a grid of 8192 samples, 0.186 s. Sixteen ticks make a <em>bar</em> of 131,072 samples, 2.97 s,
+and every rhythm in the piece is a division of that bar. Two pulses dividing the same bar into <i>a</i> and
+<i>b</i> beats coincide at fractions <i>m</i>/<i>a</i> = <i>n</i>/<i>b</i>, that is, every
+1/gcd(<i>a</i>, <i>b</i>) of a bar. If <i>a</i> and <i>b</i> are <em>coprime</em> (gcd = 1), they meet
+<em>only on the downbeat</em>. Between downbeats every onset of one falls in a different place against the
+other, and the gaps between successive onsets of the combined pattern are all different. That is what lets the
+ear hear two streams instead of one.</p>
+<div class="math">onsets of <i>a</i> ∩ onsets of <i>b</i> = { <i>k</i> / gcd(<i>a</i>,<i>b</i>) } &nbsp;⇒&nbsp; gcd = 1: only the downbeat</div>
+<figure class="svg"><svg id="fig-coprime" viewBox="0 0 820 230" role="img" aria-label="Coprime versus non-coprime pulses"></svg>
+<figcaption>Left: 4 against 6 (gcd 2) meet mid-bar, and the pattern collapses into a simpler one. Right: 3 against 5 (gcd 1) meet only on the downbeat, and the combined onsets are all at different distances.</figcaption></figure>
+<p>The piece runs five streams at once. Each musical stream, a voice that is part of the music itself, is paired
+with a <em>guide drum</em> that plays its pulse. When a stream is new to the ear, its drum plays at full level
+for four bars, then drops to 40% as a light doubling, and the music carries the rhythm on its own:</p>
+<table>
+<tr><th>stream</th><th>division</th><th>in the music</th><th>guide drum</th></tr>
+<tr><td>choir beat</td><td class="num">3</td><td>the choir's notes wait for the next beat in 3, and it breathes on each</td><td>log drum on the fifth</td></tr>
+<tr><td>past's accents</td><td class="num">3 + 3 + 3 + 3 + 4</td><td>past's own short notes are accented in groups of 3 of its 16 steps: 3 against 4 inside its own grid</td><td>rim</td></tr>
+<tr><td>left echoes</td><td class="num">5</td><td>harm's left delay network has taps on fifths of the bar</td><td>FM bell on the third</td></tr>
+<tr><td>right echoes</td><td class="num">7</td><td>harm's right delay network has taps on sevenths of the bar</td><td>tick on the ninth</td></tr>
+<tr><td>harm's high tick</td><td class="num">11 : 8</td><td>harm's click re-timed: a tick in 11 gated by a pulse in 8</td><td>—</td></tr>
+</table>
+{{poly}}
+<figure class="svg"><svg id="fig-poly" viewBox="0 0 820 300" role="img" aria-label="Polyrhythm grid in one bar"></svg>
+<figcaption>One bar: past's 16 steps, the rim's 3+3+3+3+4, and the pulses in 3, 5, 7 and 11. They all meet only at the downbeat. Every drum takes its pitch from the current key (root, fifth, third, ninth), so the rhythm stays in the harmony.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="mutation"><span class="n">9</span>Rhythm that mutates</h2>
+<p>In endless mode the five divisions are <em>genes</em>. About every seven minutes (randomly 6–8, always on a
+downbeat), one gene is picked at random and given a new value from its pool. The new value must be coprime with
+the other beats (the accent grouping is exempt), so the streams can never lock together. The changed
+stream's guide drum comes back to full for four bars, pointing the ear at the new rhythm.</p>
+{{mutate}}
+<p>When a delay grid mutates, harm's taps do not jump to their new lengths, which would click. They
+<em>glide</em> at most 0.01 samples per sample, reading between samples with linear interpolation:</p>
+<div class="math"><i>y</i> = <i>d</i>[⌊τ⌋] + (τ − ⌊τ⌋)(<i>d</i>[⌊τ⌋+1] − <i>d</i>[⌊τ⌋]), &nbsp;&nbsp; |dτ/d<i>t</i>| ≤ 0.01 &nbsp;⇒&nbsp; pitch ratio 1 ± 0.01 (≈ 17 cents)</div>
+<p>A delay line whose length changes shifts the pitch of what passes through it (the tape-delay effect): its
+echoes bend by at most 17 cents for the 10–40 s that the change takes, then settle on the new grid.</p>
+{{glide}}
+<figure class="svg"><svg id="fig-mut" viewBox="0 0 820 230" role="img" aria-label="Mutation timeline for the first hour"></svg>
+<figcaption>The first hour of mutations (simulated): one gene at a time, at staggered intervals.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="harm"><span class="n">10</span>harm's delay networks</h2>
+<p>harm is a bank of seven feedback delay networks. Each is a single circular buffer, 50,000 samples long, read at
+up to six taps. The taps feed forward to the output with gains <i>g</i><sup>f</sup> and back into the buffer with
+gains <i>g</i><sup>b</sup>. In z-transform terms each network is an all-pole comb filter with a direct path:</p>
+<div class="math"><i>s</i>[<i>n</i>] = <i>x</i>[<i>n</i>] + Σ<sub><i>k</i></sub> <i>g<sup>b</sup><sub>k</sub></i> <i>s</i>[<i>n</i> − τ<sub><i>k</i></sub>], &nbsp;&nbsp;
+<i>y</i>[<i>n</i>] = <i>g</i><sub>0</sub><i>x</i>[<i>n</i>] + Σ<sub><i>k</i></sub> (<i>g<sup>f</sup><sub>k</sub></i> + <i>g<sup>b</sup><sub>k</sub></i>) <i>s</i>[<i>n</i> − τ<sub><i>k</i></sub>], &nbsp;&nbsp;
+<i>H</i>(<i>z</i>) ∝ 1 / (1 − Σ <i>g<sup>b</sup><sub>k</sub></i> <i>z</i><sup>−τ<sub><i>k</i></sub></sup>)</div>
+<p>This is harm's original 2003 code, kept exactly:</p>
+{{convolve}}
+<p>harm's gains are themselves slow sines, so the echoes swell and fade. Its feedback could run away: by the
+triangle inequality the network is stable when Σ|<i>g<sup>b</sup><sub>k</sub></i>| &lt; 1, and some of harm's
+tap sets reach 1.77. Each set is therefore scaled so that its sum is at most 0.95. The other change is that the
+taps no longer sit at harm's arbitrary lengths. They sit on <em>fractions of past's bar</em>, so the echoes are
+themselves rhythms, in 5 on the left and 7 on the right. A tap longer than the buffer folds down an octave.</p>
+{{taps}}
+<figure class="svg"><svg id="fig-taps" viewBox="0 0 820 200" role="img" aria-label="Delay taps on fractions of the bar"></svg>
+<figcaption>Tap lengths as fractions of the bar: left (orange) on fifths, right (teal) on sevenths. A note played on the downbeat comes back on these marks, and again from the feedback.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="reverb"><span class="n">11</span>A reverb that fills the gaps</h2>
+<p>The reverb is an eight-line <em>feedback delay network</em> (FDN). The lines are mutually prime lengths, 2011 to
+4507 samples, so their echoes never pile up on the same sample. They are mixed through an orthogonal
+<em>Hadamard matrix</em> (energy-preserving, every line feeding every other) behind four all-pass diffusers per side.
+Each line's gain is set so that the tail decays by 60 dB in RT60 seconds:</p>
+<div class="math"><i>g<sub>i</sub></i> = 10<sup>−3 <i>L<sub>i</sub></i> / (RT<sub>60</sub> · <i>f<sub>s</sub></i>)</sup>, &nbsp;&nbsp;
+<i>H</i><sub>8</sub> = <i>H</i><sub>2</sub> ⊗ <i>H</i><sub>2</sub> ⊗ <i>H</i><sub>2</sub>, &nbsp; <i>H</i><sub>2</sub> = [[1, 1], [1, −1]] / √2</div>
+{{fdn}}
+<p>What makes this reverb particular is what drives it. It follows how full past is: the sum of the sixteen voice
+envelopes, smoothed, rising fast (0.8 s) and falling slowly (2.5 s). When past thins out, the reverb
+<em>swells</em>: the wet level rises from 0.06 to 0.70 and the tail lengthens from 2.2 s to 7.5 s. The space
+fills in exactly where the notes leave it.</p>
+{{sparse}}
+<figure class="svg"><svg id="fig-sparse" viewBox="0 0 820 200" role="img" aria-label="Reverb wet and RT60 against voice density"></svg>
+<figcaption>Wet level (orange) and RT60 (teal) against voice density, the sum of the envelopes: a smoothstep from 0.4 to 6.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="swells"><span class="n">12</span>Long swells and endlessness</h2>
+<p>past was written to last about eight minutes; its sections are counted in minutes and seconds. In endless mode
+the section clock wraps every 8 minutes, the tick period has a floor, and notes are folded back into range, so
+the mathematics runs on indefinitely. Above that sit slow controls whose periods are chosen to be coprime, so
+their combinations take a long time to repeat:</p>
+<table>
+<tr><th>control</th><th>period</th><th>low</th><th>high</th></tr>
+<tr><td>choir richness</td><td class="num">5 min</td><td>narrowing toward mono, 0.7× level</td><td>second rank an octave up, third a fifth up, full stereo, 1.3× level</td></tr>
+<tr><td>bass weight</td><td class="num">9 min</td><td>0.35×, nearly a pure sine, darker</td><td>1.35×, more body and drive, brighter</td></tr>
+<tr><td>voice arc</td><td class="num">150 s × 330 s</td><td>2 voices</td><td>16 voices</td></tr>
+<tr><td>past's sections</td><td class="num">8 min</td><td colspan="2">which of past's figures play (the choir sings in minutes 1–3 of each 8)</td></tr>
+<tr><td>rhythm genes</td><td class="num">~7 min, random</td><td colspan="2">one coprime division changes</td></tr>
+</table>
+<p>Periods of 5 and 9 minutes realign only after lcm(5, 9) = 45 minutes; together with the 8-minute
+sections, after lcm(5, 8, 9) = 360 minutes. The random mutations break even that.</p>
+{{swell}}
+<figure class="svg"><svg id="fig-swells" viewBox="0 0 820 220" role="img" aria-label="Choir and bass swells over 45 minutes"></svg>
+<figcaption>45 minutes: choir richness (teal, 5 min), bass weight (orange, 9 min), and the stretches where past's sections let the choir sing (shaded). Each return of the choir falls at a different point on both curves.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="picture"><span class="n">13</span>The picture</h2>
+<p>p10m1 is a <em>feedback</em> image. Every frame, the previous frame is blurred, and the newly rendered cubes
+replace it only where they are, with the old picture showing through their insides. The blur and the feedback
+emulate the original's integer arithmetic exactly, truncating toward zero, so small values always lose a little
+and the interiors sink toward black over many frames. That slow sinking is p10m1's look.</p>
+{{feedback}}
+<h3>Cubes that orbit with the notes</h3>
+<p>180 cubes are divided among the sixteen voices; each cube's size follows its voice's envelope. Each voice's group
+of cubes turns about an axis taken from the note it plays. The pitch class is placed on the <em>circle of
+fifths</em> (multiply by 7 mod 12), so related notes turn on nearby axes, and the octave tilts the axis. A
+semitone step reverses the direction. The orientation is a quaternion integrated every frame, so a change of note
+is a slowing down and turning back, never a jump.</p>
+<div class="math">θ = 2π · (7·pc mod 12)/12, &nbsp; φ = 22° + 16°·octave, &nbsp; axis = (sin φ cos θ, cos φ, sin φ sin θ), &nbsp; <i>q</i> ← Δ<i>q</i>(axis, ω·d<i>t</i>) · <i>q</i></div>
+{{orbit}}
+<figure class="svg"><svg id="fig-fifths" viewBox="0 0 820 260" role="img" aria-label="Circle of fifths mapped to rotation axes"></svg>
+<figcaption>Pitch classes on the circle of fifths. Neighbours (C–G–D …) share most of their notes, and their cubes turn on neighbouring axes.</figcaption></figure>
+<h3>The lattice in the black</h3>
+<p>Where the feedback has sunk to near black, an orange triangular lattice shows through. Its four layers pulse
+with the four polyrhythm layers, and its spacing, thickness, hue and repetition follow the score. When it fades
+out it comes back changed: rotated, sheared by an affine map, warped, less dense, and recoloured within an
+orange / teal / blue family. Repetition, then surprise.</p>
+<h3>Zoom</h3>
+<p>The camera zooms in inversely to the number of voices sounding: about 5× when past is silent, 1× at ten
+or more voices. As the music thins out, the picture moves closer.</p>
+
+<!-- ============================================================ -->
+<h2 id="glass"><span class="n">14</span>Glass</h2>
+<p>About one cube in nine is glass. A separate pass renders the glass cubes' surface normals into a
+half-float buffer. Some glass is perfect, some gently bumped, some strongly bumped, some fractured into shards. The
+flaws are a tiling height field stored as slopes along the face's own two edge directions (<em>tangent space</em>).
+A small shader tilts each face's normal by the slope along its actual edges, so a bump bends light the way the face
+is really turned, whatever the cube's rotation:</p>
+<div class="math"><i>n</i>′ = normalize(<i>n</i> − (∂<i>h</i>/∂<i>u</i>) <i>t</i> − (∂<i>h</i>/∂<i>v</i>) <i>b</i>)</div>
+{{flaw}}
+<p>The glass pass bends the view ray at that normal by <em>Snell's law</em> (refractive index 1.5) and looks up the
+picture where the bent ray lands. Each colour channel bends by a slightly different amount, which gives
+<em>dispersion</em>, the rainbow fringes. Light is absorbed along the path through the glass (Beer–Lambert), more
+in red than in blue, and grazing faces reflect more (Fresnel):</p>
+<div class="math"><i>η</i><sub>1</sub> sin <i>θ</i><sub>1</sub> = <i>η</i><sub>2</sub> sin <i>θ</i><sub>2</sub>, &nbsp;&nbsp;
+<i>T</i> = exp(−<i>σ</i> · path), &nbsp; <i>σ</i> = (0.17, 0.12, 0.08) for r, g, b</div>
+<figure class="svg"><svg id="fig-snell" viewBox="0 0 820 260" role="img" aria-label="Refraction through a bumpy glass face"></svg>
+<figcaption>A view ray bends at the bumped surface; red, green and blue bend by slightly different amounts (the split is exaggerated here so it is visible). The choir's level sets how hard the glass bends light, and the bell sets how widely the colours spread.</figcaption></figure>
+{{snell}}
+
+<!-- ============================================================ -->
+<h2 id="title"><span class="n">15</span>A title that gets eaten</h2>
+<p>The title, PAST / HARM over the credit, is set in D-DIN with CoreText into a coverage mask in the bottom
+left. Each text pixel has an <em>integrity</em> that can only fall. Wherever the evolving picture differs from the
+plain background behind the letters, they are nibbled away, raggedly, and the damage creeps inward from the bitten
+edges. The title is stamped in <em>before</em> the feedback, so its fragments are dragged into the blur and
+the echoes. Within a couple of minutes, the work has eaten its own name.</p>
+{{integ}}
+
+<p class="note" style="margin-top:64px">Generated from the source of p10m1-past. Every code block above is copied
+verbatim from the file and line shown, and the diagrams are drawn from the same formulas the code uses.</p>
+</main>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const css = getComputedStyle(document.documentElement);
+  const C = k => css.getPropertyValue('--' + k).trim();
+  function el(p, tag, a, txt) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; p.appendChild(e); return e; }
+  const line = (s, x1, y1, x2, y2, col, w, extra) => el(s, 'line', Object.assign({ x1, y1, x2, y2, stroke: col, 'stroke-width': w || 1 }, extra || {}));
+  const text = (s, x, y, t, a) => el(s, 'text', Object.assign({ x, y, fill: C('muted'), 'font-size': 13 }, a || {}), t);
+  const path = (s, d, col, w, extra) => el(s, 'path', Object.assign({ d, fill: 'none', stroke: col, 'stroke-width': w || 1.5 }, extra || {}));
+  const poly = pts => pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const $ = id => document.getElementById(id);
+
+  /* 1 signal flow */
+  (function () {
+    const s = $('fig-flow');
+    function box(x, y, w, h, t, sub, col) {
+      el(s, 'rect', { x, y, width: w, height: h, rx: 3, fill: C('bg'), stroke: col || C('faint') });
+      text(s, x + w / 2, y + h / 2 - (sub ? 4 : -5), t, { 'text-anchor': 'middle', fill: C('ink'), 'font-size': 15 });
+      if (sub) text(s, x + w / 2, y + h / 2 + 14, sub, { 'text-anchor': 'middle', 'font-size': 11 });
+    }
+    el(s, 'defs', {}).innerHTML = '<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="' + C('muted') + '"/></marker>';
+    const arr = (x1, y1, x2, y2, dash) => line(s, x1, y1, x2, y2, C('muted'), 1.2, Object.assign({ 'marker-end': 'url(#ar)' }, dash ? { 'stroke-dasharray': '4 4' } : {}));
+    box(10, 30, 130, 60, 'past', '16 voices, scales', C('orange'));
+    box(10, 120, 130, 46, 'choir + bass', 'PADsynth');
+    box(10, 190, 130, 46, 'key tracker', 'KK profiles');
+    box(190, 60, 130, 60, 'harm', '7 delay networks', C('teal'));
+    box(370, 60, 120, 60, 'polyrhythm', 'guide drums');
+    box(540, 60, 110, 60, 'reverb', '8-line FDN');
+    box(700, 60, 110, 60, 'output', 'tanh, 44.1 kHz');
+    arr(140, 60, 188, 80); arr(140, 143, 188, 105); arr(320, 90, 368, 90); arr(490, 90, 538, 90); arr(650, 90, 698, 90);
+    arr(75, 190, 75, 168); arr(140, 213, 260, 122);
+    box(330, 210, 330, 56, 'picture (GPU, ~60 fps)', 'cubes · feedback · lattice · glass · title', C('blue'));
+    arr(75, 236, 328, 238, true); arr(255, 120, 380, 208, true); arr(430, 120, 470, 208, true); arr(595, 120, 560, 208, true);
+    text(s, 10, 18, 'sample clock i → every slow change is a function of i', { 'font-size': 12 });
+  })();
+
+  /* 2 partial weights */
+  (function () {
+    const s = $('fig-partials'), W = 820, x0 = 30, cw = (W - 40) / 7;
+    for (let t = 0; t < 7; t++) {
+      const N = 2 + t, sum = N * (N - 1) / 2, gx = x0 + t * cw;
+      text(s, gx + cw / 2 - 10, 246, 'N=' + N, { 'text-anchor': 'middle' });
+      for (let k = 0; k < N; k++) {
+        const w = (N - k) / sum, h = w * 180, bw = (cw - 30) / 8;
+        el(s, 'rect', { x: gx + k * bw, y: 225 - h, width: bw - 2, height: h, fill: k % 2 ? C('teal') : C('orange'), opacity: k === 0 ? 0.35 : 1 });
+      }
+    }
+    line(s, x0, 225, W - 10, 225, C('faint'));
+    text(s, x0, 20, 'weight (N − k) / (N(N−1)/2); k = 0 is sin(0) = 0, drawn faint', { 'font-size': 12 });
+  })();
+
+  /* 2b atan */
+  (function () {
+    const s = $('fig-atan'), cols = [C('sky'), C('teal'), C('orange')], drives = [0.5, 2, 7];
+    line(s, 20, 100, 800, 100, C('faint'));
+    drives.forEach((a, n) => {
+      const pts = [];
+      for (let x = 0; x <= 780; x += 2) { const th = x / 780 * 4 * Math.PI; pts.push([20 + x, 100 - 80 * Math.atan(Math.sin(th) * a) / Math.atan(a > 1.6 ? a : 1.6)]); }
+      path(s, poly(pts), cols[n], 2);
+      text(s, 700, 30 + n * 16, 'a = ' + a, { fill: cols[n] });
+    });
+  })();
+
+  /* 4 KK */
+  (function () {
+    const s = $('fig-kk'), maj = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88], min = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+    const names = ['1', '♭2', '2', '♭3', '3', '4', '♭5', '5', '♭6', '6', '♭7', '7'], bw = 62;
+    for (let i = 0; i < 12; i++) {
+      const x = 40 + i * bw;
+      el(s, 'rect', { x, y: 190 - maj[i] * 26, width: 24, height: maj[i] * 26, fill: C('orange') });
+      el(s, 'rect', { x: x + 26, y: 190 - min[i] * 26, width: 24, height: min[i] * 26, fill: C('teal') });
+      text(s, x + 25, 208, names[i], { 'text-anchor': 'middle' });
+    }
+    line(s, 30, 190, 800, 190, C('faint'));
+  })();
+
+  /* 4 masks */
+  (function () {
+    const s = $('fig-masks');
+    const masks = [['major', [1,0,1,0,1,1,0,1,0,1,0,1]], ['major pentatonic', [1,0,1,0,1,0,0,1,0,1,0,0]], ['Phrygian', [1,1,0,1,0,1,0,1,1,0,1,0]], ['in', [1,1,0,0,0,1,0,1,1,0,0,0]]];
+    const names = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+    masks.forEach(([nm, m], n) => {
+      const cx = 105 + n * 205, cy = 110, r = 72, P = i => [cx + r * Math.sin(2 * Math.PI * i / 12), cy - r * Math.cos(2 * Math.PI * i / 12)];
+      el(s, 'circle', { cx, cy, r, fill: 'none', stroke: C('rule') });
+      const on = []; for (let i = 0; i < 12; i++) if (m[i]) on.push(P(i));
+      path(s, poly(on) + 'Z', n >= 2 ? C('rose') : C('orange'), 1.5, { fill: n >= 2 ? 'rgba(212,86,122,.12)' : 'rgba(224,120,43,.12)' });
+      for (let i = 0; i < 12; i++) {
+        const [x, y] = P(i); el(s, 'circle', { cx: x, cy: y, r: m[i] ? 5 : 2.5, fill: m[i] ? C('ink') : C('faint') });
+        const [lx, ly] = [cx + (r + 15) * Math.sin(2 * Math.PI * i / 12), cy - (r + 15) * Math.cos(2 * Math.PI * i / 12) + 4];
+        if (m[i]) text(s, lx, ly, names[i], { 'text-anchor': 'middle', 'font-size': 11 });
+      }
+      text(s, cx, 222, nm, { 'text-anchor': 'middle', fill: C('ink'), 'font-size': 14 });
+    });
+  })();
+
+  /* 5 arc */
+  (function () {
+    const s = $('fig-arc'), T = 600, X = t => 40 + t / T * 760, Y = v => 190 - v * 160;
+    const cap = [], mood = [];
+    for (let t = 0; t <= T; t += 1) {
+      let w = 0.5 - 0.5 * Math.cos(2 * Math.PI * t / 150); w *= 0.8 + 0.2 * (0.5 - 0.5 * Math.cos(2 * Math.PI * t / 330));
+      let c = 2 + Math.round(14 * w); let x = Math.min(Math.max((t - 20) / 180, 0), 1); const m = x * x * (3 - 2 * x); if (m < 0.3 && c > 1) c--;
+      cap.push([X(t), Y(c / 16)]); mood.push([X(t), Y(m)]);
+    }
+    line(s, 40, 190, 800, 190, C('faint'));
+    for (let m = 0; m <= 10; m++) { text(s, X(m * 60), 208, m + ':00', { 'text-anchor': 'middle', 'font-size': 11 }); }
+    path(s, poly(cap), C('orange'), 1.6); path(s, poly(mood), C('teal'), 2);
+    text(s, 44, 22, 'voice cap (of 16)', { fill: C('orange') }); text(s, 200, 22, 'mood', { fill: C('teal') });
+  })();
+
+  /* 6 PAD */
+  (function () {
+    const s = $('fig-pad'), f0 = 140, cents = 45, X = f => 30 + f / 3000 * 770, pts = [], amp = [];
+    for (let f = 20; f <= 3000; f += 0.5) {
+      let a = 0;
+      for (let h = 1; h * f0 < 3200; h++) { const bw = (Math.pow(2, cents / 1200) - 1) * f0 * h, x = (f - h * f0) / bw; a += (1 / h) * Math.exp(-x * x) / Math.sqrt(bw); }
+      amp.push([f, Math.sqrt(a)]);
+    }
+    const am = Math.max(...amp.map(p => p[1]));
+    amp.forEach(([f, a]) => pts.push([X(f), 210 - a / am * 180]));
+    text(s, 34, 22, '√|X(f)| (square-root scale, so the quiet upper bands show)', { 'font-size': 12 });
+    line(s, 30, 210, 800, 210, C('faint'));
+    path(s, poly(pts), C('sky'), 1.3);
+    [500, 1000, 1500, 2000, 2500, 3000].forEach(f => text(s, X(f), 228, f + ' Hz', { 'text-anchor': 'middle', 'font-size': 11 }));
+  })();
+
+  /* 8 coprime */
+  (function () {
+    const s = $('fig-coprime');
+    function bar(x0, y0, w, a, b, label) {
+      line(s, x0, y0 + 60, x0 + w, y0 + 60, C('faint'));
+      for (let k = 0; k <= a; k++) el(s, 'circle', { cx: x0 + w * k / a, cy: y0 + 30, r: 6, fill: C('orange') });
+      for (let k = 0; k <= b; k++) el(s, 'circle', { cx: x0 + w * k / b, cy: y0 + 90, r: 6, fill: C('teal') });
+      for (let k = 0; k <= a; k++) for (let j = 0; j <= b; j++) if (k * b === j * a) {
+        const x = x0 + w * k / a; line(s, x, y0 + 14, x, y0 + 106, C('ink'), 1.2, { 'stroke-dasharray': '3 3' });
+      }
+      text(s, x0, y0 + 136, label, { fill: C('ink'), 'font-size': 14 });
+      text(s, x0 - 14, y0 + 34, a, { 'text-anchor': 'end', fill: C('orange') }); text(s, x0 - 14, y0 + 94, b, { 'text-anchor': 'end', fill: C('teal') });
+    }
+    bar(40, 20, 330, 4, 6, '4 : 6, gcd 2: they meet mid-bar');
+    bar(450, 20, 330, 3, 5, '3 : 5, gcd 1: only the downbeat');
+  })();
+
+  /* 8 poly grid */
+  (function () {
+    const s = $('fig-poly'), x0 = 110, w = 690, rows = [
+      ['16 steps', C('faint'), Array.from({ length: 16 }, (_, k) => k / 16)],
+      ['rim 3+3+3+3+4', C('ink'), [0, 3, 6, 9, 12].map(k => k / 16)],
+      ['choir / log 3', C('orange'), [0, 1, 2].map(k => k / 3)],
+      ['bell 5', C('sky'), [0, 1, 2, 3, 4].map(k => k / 5)],
+      ['tick 7', C('teal'), Array.from({ length: 7 }, (_, k) => k / 7)],
+      ['harm 11', C('rose'), Array.from({ length: 11 }, (_, k) => k / 11)]];
+    rows.forEach(([nm, col, on], r) => {
+      const y = 30 + r * 42;
+      line(s, x0, y, x0 + w, y, C('rule'));
+      text(s, x0 - 12, y + 4, nm, { 'text-anchor': 'end', 'font-size': 12 });
+      on.forEach(f => el(s, 'circle', { cx: x0 + w * f, cy: y, r: r === 0 ? 3 : 6, fill: col }));
+    });
+    line(s, x0, 14, x0, 268, C('ink'), 1, { 'stroke-dasharray': '3 3' }); line(s, x0 + w, 14, x0 + w, 268, C('faint'), 1, { 'stroke-dasharray': '3 3' });
+    text(s, x0, 290, 'downbeat', { 'text-anchor': 'middle', 'font-size': 11 }); text(s, x0 + w, 290, 'next downbeat', { 'text-anchor': 'middle', 'font-size': 11 });
+  })();
+
+  /* 9 mutations */
+  (function () {
+    const s = $('fig-mut'), X = m => 60 + m / 60 * 740;
+    const genes = ['choir beat', 'accents', 'left grid', 'right grid', 'high tick'];
+    const start = [3, 3, 5, 7, 11];
+    const ev = [[6.98, 3, 13], [14.55, 1, 7], [21.88, 0, 4], [28.92, 4, 9], [35.52, 4, 11], [42.78, 0, 3], [50.02, 2, 7], [57.1, 2, 5]];
+    genes.forEach((g, r) => {
+      const y = 30 + r * 34; line(s, 60, y, 800, y, C('rule')); text(s, 52, y + 4, g, { 'text-anchor': 'end', 'font-size': 12 });
+      let v = start[r], x = 60;
+      ev.filter(e => e[1] === r).concat([[60, r, null]]).forEach(e => {
+        text(s, (x + X(e[0])) / 2, y - 6, v, { 'text-anchor': 'middle', fill: C('ink'), 'font-size': 12 });
+        if (e[2] != null) { el(s, 'circle', { cx: X(e[0]), cy: y, r: 5, fill: C('orange') }); v = e[2]; }
+        x = X(e[0]);
+      });
+    });
+    for (let m = 0; m <= 60; m += 10) text(s, X(m), 218, m + ' min', { 'text-anchor': 'middle', 'font-size': 11 });
+  })();
+
+  /* 10 taps */
+  (function () {
+    const s = $('fig-taps'), x0 = 40, w = 760, Y1 = 60, Y2 = 130;
+    line(s, x0, Y1, x0 + w, Y1, C('rule')); line(s, x0, Y2, x0 + w, Y2, C('rule'));
+    text(s, x0, Y1 - 20, 'left: ¼, ½, 1, 3⁄2, 7⁄4 of a bar / 5', { fill: C('orange') });
+    text(s, x0, Y2 - 20, 'right: ½, 1, 2 of a bar / 7', { fill: C('teal') });
+    [1 / 20, 1 / 10, 1 / 5, 3 / 10, 7 / 20].forEach(f => { line(s, x0 + w * f, Y1 - 10, x0 + w * f, Y1 + 10, C('orange'), 3); });
+    [1 / 14, 1 / 7, 2 / 7].forEach(f => { line(s, x0 + w * f, Y2 - 10, x0 + w * f, Y2 + 10, C('teal'), 3); });
+    for (let k = 0; k <= 4; k++) text(s, x0 + w * k / 4, 176, k === 0 ? 'note' : k + '⁄4 bar', { 'text-anchor': 'middle', 'font-size': 11 });
+    line(s, x0 + w * 50000 / 131072, 34, x0 + w * 50000 / 131072, 150, C('faint'), 1, { 'stroke-dasharray': '4 4' });
+    text(s, x0 + w * 50000 / 131072 + 6, 160, 'buffer limit (50,000 samples)', { 'font-size': 11 });
+  })();
+
+  /* 11 sparse */
+  (function () {
+    const s = $('fig-sparse'), X = d => 40 + d / 10 * 760, Y = v => 170 - v * 140, wet = [], rt = [];
+    for (let d = 0; d <= 10; d += 0.05) {
+      let t = Math.min(Math.max((d - 0.4) / 5.6, 0), 1); const sp = 1 - t * t * (3 - 2 * t);
+      wet.push([X(d), Y(0.06 + 0.64 * sp)]); rt.push([X(d), Y((2.2 + 5.3 * sp) / 7.5)]);
+    }
+    line(s, 40, 170, 800, 170, C('faint'));
+    path(s, poly(wet), C('orange'), 2); path(s, poly(rt), C('teal'), 2);
+    for (let d = 0; d <= 10; d += 2) text(s, X(d), 188, d, { 'text-anchor': 'middle', 'font-size': 11 });
+    text(s, 620, 186, 'voice density →', { 'font-size': 11 });
+    text(s, 60, 26, 'wet 0.06 – 0.70', { fill: C('orange') }); text(s, 200, 26, 'RT60 2.2 – 7.5 s', { fill: C('teal') });
+  })();
+
+  /* 12 swells */
+  (function () {
+    const s = $('fig-swells'), T = 45, X = m => 40 + m / T * 760, Y = v => 180 - v * 150, ch = [], ba = [];
+    for (let m = 0; m < T; m += 8) {
+      el(s, 'rect', { x: X(m + 1), y: 30, width: X(m + 4) - X(m + 1), height: 150, fill: 'rgba(143,196,255,.08)' });
+    }
+    for (let m = 0; m <= T; m += 0.05) {
+      ch.push([X(m), Y(0.5 - 0.5 * Math.cos(2 * Math.PI * m / 5))]); ba.push([X(m), Y(0.5 + 0.5 * Math.sin(2 * Math.PI * m / 9))]);
+    }
+    line(s, 40, 180, 800, 180, C('faint'));
+    path(s, poly(ch), C('teal'), 2); path(s, poly(ba), C('orange'), 2);
+    for (let m = 0; m <= T; m += 5) text(s, X(m), 198, m + ' min', { 'text-anchor': 'middle', 'font-size': 11 });
+    text(s, 44, 22, 'choir richness', { fill: C('teal') }); text(s, 170, 22, 'bass weight', { fill: C('orange') }); text(s, 280, 22, 'choir sings', { fill: C('sky') });
+  })();
+
+  /* 13 fifths */
+  (function () {
+    const s = $('fig-fifths'), cx = 200, cy = 130, r = 96, names = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+    el(s, 'circle', { cx, cy, r, fill: 'none', stroke: C('rule') });
+    for (let pc = 0; pc < 12; pc++) {
+      const f = (pc * 7) % 12, a = 2 * Math.PI * f / 12, x = cx + r * Math.sin(a), y = cy - r * Math.cos(a);
+      const hue = 215 + 20 * Math.sin(a);
+      el(s, 'circle', { cx: x, cy: y, r: 15, fill: 'hsl(' + hue + ',60%,45%)' });
+      text(s, x, y + 5, names[pc], { 'text-anchor': 'middle', fill: '#fff', 'font-size': 13 });
+    }
+    text(s, cx, cy + 5, '×7 mod 12', { 'text-anchor': 'middle', 'font-size': 12 });
+    // axes in 3D (oblique projection)
+    const ox = 600, oy = 150;
+    for (let pc = 0; pc < 12; pc++) {
+      const th = 2 * Math.PI * ((pc * 7) % 12) / 12, ph = (22 + 16 * 1) * Math.PI / 180;
+      const ax = [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)];
+      const px = ox + 150 * (ax[0] + 0.45 * ax[2]), py = oy - 120 * (ax[1] - 0.25 * ax[2]);
+      line(s, ox, oy, px, py, 'hsl(' + (215 + 20 * Math.sin(th)) + ',60%,55%)', 2);
+      text(s, px + (px - ox) * 0.08, py + (py - oy) * 0.08 + 4, names[pc], { 'text-anchor': 'middle', 'font-size': 11 });
+    }
+    text(s, ox, 250, 'rotation axes (octave 1)', { 'text-anchor': 'middle', 'font-size': 12 });
+  })();
+
+  /* 14 snell */
+  (function () {
+    const s = $('fig-snell'), surf = x => 150 + 14 * Math.sin(x / 38) + 6 * Math.sin(x / 13);
+    const pts = []; for (let x = 20; x <= 800; x += 3) pts.push([x, surf(x)]);
+    el(s, 'path', { d: poly(pts) + ' L800 250 L20 250 Z', fill: 'rgba(143,196,255,.10)', stroke: C('sky'), 'stroke-width': 1.5 });
+    text(s, 30, 240, 'glass, η = 1.5', { 'font-size': 12 });
+    [180, 400, 620].forEach(x => {
+      const y = surf(x), dx = 1, sl = (surf(x + dx) - surf(x - dx)) / (2 * dx);
+      let n = [sl, -1]; const nl = Math.hypot(n[0], n[1]); n = [n[0] / nl, n[1] / nl]; // outward normal (up)
+      const v = [0.18, 1]; const vl = Math.hypot(v[0], v[1]); const vi = [v[0] / vl, v[1] / vl];
+      line(s, x - vi[0] * 130, y - vi[1] * 130, x, y, C('ink'), 1.6);
+      line(s, x - n[0] * 40, y - n[1] * 40, x + n[0] * 40, y + n[1] * 40, C('faint'), 1, { 'stroke-dasharray': '3 3' });
+      [[1 / 1.3, C('rose')], [1 / 1.5, '#6ad18a'], [1 / 1.75, C('blue')]].forEach(([eta, col]) => {
+        const ci = -(n[0] * vi[0] + n[1] * vi[1]), k = 1 - eta * eta * (1 - ci * ci);
+        const t = [eta * vi[0] + (eta * ci - Math.sqrt(k)) * n[0], eta * vi[1] + (eta * ci - Math.sqrt(k)) * n[1]];
+        line(s, x, y, x + t[0] * 95, y + t[1] * 95, col, 1.6);
+      });
+    });
+    text(s, 640, 30, 'view rays', { fill: C('ink'), 'font-size': 12 });
+  })();
+})();
+</script>
+</body>
+</html>
