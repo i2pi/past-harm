@@ -46,6 +46,11 @@ th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rul
 th { color: var(--muted); font-weight: 400; }
 td.num { font-variant-numeric: tabular-nums; }
 .note { color: var(--muted); font-size: 15px; }
+.prov { margin: 4px 0 18px; font-size: 14px; line-height: 1.55; color: var(--muted); border-left: 2px solid var(--faint); padding: 2px 0 2px 12px; }
+.tag { display: inline-block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
+.t-orig { background: rgba(224,120,43,.16); color: var(--orange); }
+.t-dir { background: rgba(58,167,163,.16); color: var(--teal); }
+.t-ai { background: rgba(143,196,255,.14); color: var(--sky); }
 svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif; }
 @media (max-width: 640px) {
   body { font-size: 16px; }
@@ -66,7 +71,7 @@ svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif;
   generative music engine: sixteen oscillators, a few scales and a nest of slow sine waves. <em>harm</em> (2003, rendered
   2006) is a set of feedback delay networks with drums. <em>p10m1</em> (March 2012) is a feedback picture of
   rotating cubes. Here past plays, harm listens to it, and the picture reads past's internal state. This page
-  walks through the ideas and the mathematics, starting with the music, with the code quoted directly from the source.</p>
+  walks through the ideas and the mathematics, starting with the music, with the code quoted directly from the source. The 2026 version was made with Claude, and each section says which parts are original and which were added (<a href="#authorship">section 16</a>).</p>
 </header>
 
 <nav class="toc">
@@ -85,10 +90,18 @@ svg text { font-family: "D-DIN", "Helvetica Neue", Helvetica, Arial, sans-serif;
   <a href="#picture">13 · The picture</a>
   <a href="#glass">14 · Glass</a>
   <a href="#title">15 · A title that gets eaten</a>
+  <a href="#authorship">16 · Who made what</a>
 </nav>
+
+<div class="prov" style="margin-top:28px">Each section below starts with a note on where its parts came from, using three labels:<br>
+<span class="tag t-orig">original</span>Joshua Reich's 2003 / 2012 code, kept.<br>
+<span class="tag t-dir">directed</span>Added in 2026 at his direction. The idea, and often the technique, are his; the implementation is Claude's.<br>
+<span class="tag t-ai">Claude</span>Added in 2026, where the specific choice was made by Claude (Anthropic's AI model) and then accepted or adjusted by him.<br>
+<a href="#authorship">Section 16</a> gives the numbers.</div>
 
 <!-- ============================================================ -->
 <h2 id="flow"><span class="n">1</span>Signal flow</h2>
+<div class="prov"><span class="tag t-dir">directed</span>Combining past, harm and p10m1 into one piece, with the picture reading the music's state, was Joshua's idea. <span class="tag t-ai">Claude</span>The wiring is Claude's: the struct port of past, audio output, snapshots for the picture, and the offline renderer.</div>
 <p>All the sound comes from one function, <code>past_next()</code>, called 44,100 times a second. Its sample index
 <i>i</i> is the only clock: every slow change in the piece is a function of <i>i</i>, so the piece is deterministic.
 Rendered twice, it is identical to the sample. The picture runs at its own frame rate and reads snapshots of the engine's
@@ -98,6 +111,7 @@ state: which voices sound, their notes and envelopes, the key, the drum hits, th
 
 <!-- ============================================================ -->
 <h2 id="voices"><span class="n">2</span>How a voice is made</h2>
+<div class="prov"><span class="tag t-orig">original</span>past, December 2003, kept verbatim. The code below is Joshua's. past alone still renders byte-identical to the 2003 program.</div>
 <p>past has sixteen oscillators. A note sets an oscillator's phase increment from its frequency and gives it an
 attack / hold / release envelope. What a voice sounds like depends on its slot <i>j</i>: it sums
 <i>N</i> = 2 + (<i>j</i> mod 7) partials, weighted linearly down from the fundamental:</p>
@@ -156,6 +170,7 @@ if (k % 2 == 1)
 
 <!-- ============================================================ -->
 <h2 id="feedback"><span class="n">3</span>The cross-coupled filter</h2>
+<div class="prov"><span class="tag t-orig">original</span>past, 2003, verbatim. <span class="tag t-ai">Claude</span>The picture reading these coefficients is a 2026 mapping.</div>
 <p>Before the output, the two channels are fed back into each other through the previous three samples. The
 coefficients are sines with long, unrelated periods, about 10 s, 30 s, 34 s and 2 min, some offset by the current
 tick. Together they form a time-varying second-order recursive filter in which left drives right and right drives left:</p>
@@ -173,6 +188,7 @@ coefficients: the background's radial warp, the blur and the feedback decay all 
 
 <!-- ============================================================ -->
 <h2 id="harmony"><span class="n">4</span>Scales, keys and harmony</h2>
+<div class="prov"><span class="tag t-orig">original</span>The scale tables are past's. <span class="tag t-dir">directed</span>Making full passages more harmonious, and a sparse, oppressive opening, were Joshua's requests. <span class="tag t-ai">Claude</span>The method is Claude's: key finding by Krumhansl–Kessler correlation, snapping to the scale, pentatonic once four voices sound, and the Phrygian and <i>in</i> scales for the opening. In the full piece this code moves some of past's notes: the engine is unmodified, but in dense passages the pitches heard are snapped to a scale past did not choose.</div>
 <p>past's melody comes from short scale tables: offsets in semitones such as
 <code>{0, 3, 0, 5, 0, 1, 7, 4, 5}</code>, stepped through by a counter. Notes can collide: with up to sixteen
 voices and three tables, a full passage can stack semitones and tritones. Three additions keep the harmony
@@ -230,6 +246,7 @@ then the Japanese <em>in</em> scale (root, ♭2, 4, 5, ♭6), which is darker st
 
 <!-- ============================================================ -->
 <h2 id="arc"><span class="n">5</span>The arc and the mood</h2>
+<div class="prov"><span class="tag t-dir">directed</span>Starting sparse, building up and down, and an oppressive opening that opens out were Joshua's. <span class="tag t-ai">Claude</span>The curves (150 s × 330 s, the 0:20–3:20 smoothstep), the octave drop, the lament and the darkening low-pass are Claude's.</div>
 <p>How many voices may sound at once follows a raised cosine of period 150 s. Its height is modulated by a second
 raised cosine of period 330 s, so no two swells are the same size. The cap runs from 2 to 16 voices, so the
 piece opens sparse, builds, and thins out again, and the drums, the choir and the bell come in as it rises.</p>
@@ -254,6 +271,7 @@ The piece begins sparse and oppressive and opens out.</p>
 
 <!-- ============================================================ -->
 <h2 id="choir"><span class="n">6</span>The choir: PADsynth</h2>
+<div class="prov"><span class="tag t-dir">directed</span>The choir, a single solo voice at the start, and the technique (Gaussian bands in the frequency domain, random phases, a saw's overtone series) were Joshua's. <span class="tag t-ai">Claude</span>The implementation, the bandwidths (45 and 12 cents), the tables per octave and the vowel formants are Claude's.</div>
 <p>past's long notes, the bass pairs, are sung by a choir. A choir is many voices that are almost, but not quite,
 in tune. Rather than detune a few oscillators, the choir is built in the <em>frequency domain</em>, after Nasca
 Octavian Paul's PADsynth. For a base pitch <i>f</i><sub>0</sub>, each harmonic <i>h</i> becomes a Gaussian band
@@ -290,6 +308,7 @@ fft_inverse (re, im, PAD_N);</code></pre></figure>
 
 <!-- ============================================================ -->
 <h2 id="bass"><span class="n">7</span>The bass</h2>
+<div class="prov"><span class="tag t-dir">directed</span>A heavy, solid bass, then thicker, an octave lower, then leaner, were Joshua's calls. <span class="tag t-ai">Claude</span>The design (pure fundamental, detuned voices, tanh, low-pass) and its constants are Claude's.</div>
 <p>Under the choir sits a sub-bass that follows its lowest note, folded by octaves into 20–50 Hz. It is a pure
 fundamental, for weight, plus three voices detuned by −6, 0 and +6 cents. Each detuned voice carries its 2nd and
 3rd harmonics, and because they beat slowly against each other the body moves. It all goes through a tanh
@@ -319,6 +338,7 @@ for (v = 0; v &lt; 3; v++)
 
 <!-- ============================================================ -->
 <h2 id="poly"><span class="n">8</span>Coprime polyrhythms</h2>
+<div class="prov"><span class="tag t-dir">directed</span>Meaningful polyrhythms in past, harm and the choir, drums that guide the listener toward them, and using harm's own drum sounds, were Joshua's. <span class="tag t-orig">original</span>The thump, tick, blip and sweep are harm's 2003 clicks, re-timed. <span class="tag t-ai">Claude</span>The divisions (3, 3+3+3+3+4, 5, 7, 11:8), pairing each stream with a drum that plays at full then drops to 40%, and the drum timbres (log drum, rim, FM bell, tick) are Claude's.</div>
 <p>past ticks on a grid of 8192 samples, 0.186 s. Sixteen ticks make a <em>bar</em> of 131,072 samples, 2.97 s,
 and every rhythm in the piece is a division of that bar. Two pulses dividing the same bar into <i>a</i> and
 <i>b</i> beats coincide at fractions <i>m</i>/<i>a</i> = <i>n</i>/<i>b</i>, that is, every
@@ -355,6 +375,7 @@ static int poly_index (const past_state *s, int k, unsigned long b)
 
 <!-- ============================================================ -->
 <h2 id="mutation"><span class="n">9</span>Rhythm that mutates</h2>
+<div class="prov"><span class="tag t-dir">directed</span>The design is Joshua's: new coprime seeds, delay times that change, mutations staggered, one random change about every 7 minutes. <span class="tag t-ai">Claude</span>The value pools, the coprimality rule, the guide drum's return and the 1% tape-style glide are Claude's.</div>
 <p>In endless mode the five divisions are <em>genes</em>. About every seven minutes (randomly 6–8, always on a
 downbeat), one gene is picked at random and given a new value from its pool. The new value must be coprime with
 the other beats (the accent grouping is exempt), so the streams can never lock together. The changed
@@ -419,6 +440,7 @@ else d = buf-&gt;data[(buf-&gt;idx - buf-&gt;tap[n].tapnum) % CBUF_SIZE];</code>
 
 <!-- ============================================================ -->
 <h2 id="harm"><span class="n">10</span>harm's delay networks</h2>
+<div class="prov"><span class="tag t-orig">original</span>harm, 2003: <code>convolve()</code>, the networks and their moving gains, verbatim. <span class="tag t-ai">Claude</span>Putting the taps on fractions of past's bar, the stability scaling and the de-clicking glides are Claude's.</div>
 <p>harm is a bank of seven feedback delay networks. Each is a single circular buffer, 50,000 samples long, read at
 up to six taps. The taps feed forward to the output with gains <i>g</i><sup>f</sup> and back into the buffer with
 gains <i>g</i><sup>b</sup>. In z-transform terms each network is an all-pole comb filter with a direct path:</p>
@@ -466,6 +488,7 @@ cbuf[j].tap[6].tapnum = fold_tap (HB * 7 / (4 * D));    /* 45875 */</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="reverb"><span class="n">11</span>A reverb that fills the gaps</h2>
+<div class="prov"><span class="tag t-dir">directed</span>A reverb that swells to fill in where the voices are sparse was Joshua's. <span class="tag t-ai">Claude</span>The FDN design and its mapping are Claude's.</div>
 <p>The reverb is an eight-line <em>feedback delay network</em> (FDN). The lines are mutually prime lengths, 2011 to
 4507 samples, so their echoes never pile up on the same sample. They are mixed through an orthogonal
 <em>Hadamard matrix</em> (energy-preserving, every line feeding every other) behind four all-pass diffusers per side.
@@ -511,6 +534,7 @@ r-&gt;rt60 = RT_MIN + (RT_MAX - RT_MIN) * sp;</code></pre></figure>
 
 <!-- ============================================================ -->
 <h2 id="swells"><span class="n">12</span>Long swells and endlessness</h2>
+<div class="prov"><span class="tag t-dir">directed</span>Running the mathematics on endlessly, and dialling the choir and bass up and down on coprime 5- and 9-minute sines, were Joshua's. <span class="tag t-ai">Claude</span>What each swell changes (ranks, width, drive, cutoff) is Claude's.</div>
 <p>past was written to last about eight minutes; its sections are counted in minutes and seconds. In endless mode
 the section clock wraps every 8 minutes, the tick period has a floor, and notes are folded back into range, so
 the mathematics runs on indefinitely. Above that sit slow controls whose periods are chosen to be coprime, so
@@ -532,6 +556,7 @@ s-&gt;bass_rich  = (float) (0.5 + 0.5 * sin (2.0 * PI * t / 540.0));</code></pre
 
 <!-- ============================================================ -->
 <h2 id="picture"><span class="n">13</span>The picture</h2>
+<div class="prov"><span class="tag t-orig">original</span>p10m1, 2012: the feedback, blur and matte look, the cube layout and the palette. Claude ported them to the GPU, keeping the integer arithmetic. <span class="tag t-dir">directed</span>More cubes on different axes tied to the music, inverse zoom (5× at no voices), and an orange lattice through the black that is driven by the score and comes back changed, were Joshua's. <span class="tag t-ai">Claude</span>The circle-of-fifths mapping to axes, and the lattice's specific variants and colours, are Claude's.</div>
 <p>p10m1 is a <em>feedback</em> image. Every frame, the previous frame is blurred, and the newly rendered cubes
 replace it only where they are, with the old picture showing through their insides. The blur and the feedback
 emulate the original's integer arithmetic exactly, truncating toward zero, so small values always lose a little
@@ -568,6 +593,7 @@ or more voices. As the music thins out, the picture moves closer.</p>
 
 <!-- ============================================================ -->
 <h2 id="glass"><span class="n">14</span>Glass</h2>
+<div class="prov"><span class="tag t-dir">directed</span>Glass cubes that refract and disperse, lossy and imperfect (bumps, fractures), and the corrections to them, were Joshua's. <span class="tag t-ai">Claude</span>The physics and the shaders (tangent-space flaws, Snell refraction, absorption, Fresnel, dispersion) and their constants are Claude's.</div>
 <p>About one cube in nine is glass. A separate pass renders the glass cubes' surface normals into a
 half-float buffer. Some glass is perfect, some gently bumped, some strongly bumped, some fractured into shards. The
 flaws are a tiling height field stored as slopes along the face's own two edge directions (<em>tangent space</em>).
@@ -602,6 +628,7 @@ in red than in blue, and grazing faces reflect more (Fresnel):</p>
 
 <!-- ============================================================ -->
 <h2 id="title"><span class="n">15</span>A title that gets eaten</h2>
+<div class="prov"><span class="tag t-dir">directed</span>The title, its text, D-DIN, and its being eaten by the picture were Joshua's. <span class="tag t-ai">Claude</span>The integrity mechanism is Claude's.</div>
 <p>The title, PAST / HARM over the credit, is set in D-DIN with CoreText into a coverage mask in the bottom
 left. Each text pixel has an <em>integrity</em> that can only fall. Wherever the evolving picture differs from the
 plain background behind the letters, they are nibbled away, raggedly, and the damage creeps inward from the bitten
@@ -620,7 +647,27 @@ the echoes. Within a couple of minutes, the work has eaten its own name.</p>
     &quot;  v = max (v, 0.0); }\n&quot;
     &quot; gl_FragColor = vec4 (v); }\n&quot;;</code></pre></figure>
 
-<p class="note" style="margin-top:64px">Generated from the source of p10m1-past. Every code block above is copied
+<!-- ============================================================ -->
+<h2 id="authorship"><span class="n">16</span>Who made what</h2>
+<p>This version was made in November 2026 by Joshua Reich working with Claude, Anthropic's AI model. He set the
+direction and the constraints, chose the techniques in many places, and judged every result. Claude wrote most of
+the new code and made many of the detailed choices. Counting code lines only (comments and lone braces excluded,
+renamed variables matched), about 260 of the roughly 2,800 lines are carried over verbatim from the original programs:</p>
+<table>
+<tr><th>file</th><th>from</th><th>kept from the original</th></tr>
+<tr><td><code>past_engine.c</code></td><td>past.c (2003)</td><td>20% of the file's lines. Kept: past's whole main loop (voices, scale tables, timing, the cross-coupled filter). Dropped: its sound-card and file set-up.</td></tr>
+<tr><td><code>harm_fx.c</code></td><td>harm3.c (2003)</td><td>36%. Kept: <code>convolve()</code>, the networks, the chaotic counters and the clicks.</td></tr>
+<tr><td><code>main.c</code></td><td>p10m1 (2012)</td><td>5%. The GPU port rewrote the drawing; kept are the cube layout and the blur / matte / feedback behaviour, re-expressed as shaders.</td></tr>
+<tr><td>everything else</td><td>—</td><td>New: audio output, reverb, key finding, title, tools.</td></tr>
+</table>
+<p>Line counts alone mislead. Most of the piece's character comes from the original systems: past's composition
+and synthesis, harm's networks and p10m1's feedback picture. Every 2026 addition started from Joshua's request,
+and those requests often named the technique (Gaussian bands with random phases, coprime seeds, 5- and 9-minute
+sines, the lattice in the black, the eaten title). The <span class="tag t-ai">Claude</span>labels mark where the specific
+choices were Claude's, among them the drum sounds, the harmony method, the reverb, the glass physics and many
+constants. Those are a large part of what is heard and seen, and they are credited here as such.</p>
+
+<p class="note" style="margin-top:64px">Generated from the source of p10m1-past (written with Claude). Every code block above is copied
 verbatim from the file and line shown, and the diagrams are drawn from the same formulas the code uses.</p>
 </main>
 
